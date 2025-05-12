@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Coffee Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            /* Tailwind bg-gray-100 */
+        }
+
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group button:focus,
+        .report-input input:focus,
+        .report-input select:focus,
+        .report-input button:focus,
+        .date-quick-select button:focus,
+        .fun-fact-input input:focus,
+        .fun-fact-input button:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+            /* Tailwind focus:ring-blue-400 */
+        }
+
+        .coffee-item,
+        .cost-item,
+        .report-breakdown-item {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .coffee-item:hover,
+        .cost-item:hover,
+        .report-breakdown-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.07);
+        }
+
+        .message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease, top 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .message-box.success {
+            background-color: #10b981;
+        }
+
+        /* Tailwind bg-green-500 */
+        .message-box.error {
+            background-color: #ef4444;
+        }
+
+        /* Tailwind bg-red-500 */
+        .message-box.show {
+            opacity: 1;
+            top: 40px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+
+        /* bg-gray-200 */
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #9ca3af;
+            border-radius: 10px;
+        }
+
+        /* bg-gray-400 */
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        /* bg-gray-500 */
+        input[type="date"] {
+            min-width: 150px;
+        }
+
+        .date-quick-select button {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+            padding-top: 0.6rem;
+            padding-bottom: 0.6rem;
+        }
+
+        /* Section divider */
+        .section-divider {
+            border-top: 1px solid #d1d5db;
+            /* Tailwind border-gray-300 */
+            margin-top: 2rem;
+            /* Tailwind my-8 */
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col items-center min-h-screen p-4">
+
+    <div id="message-box" class="message-box"></div>
+
+    <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl mb-8">
+        <header class="mb-6 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Advanced Coffee Tracker</h1>
+        </header>
+
+        <div class="mb-6">
+            <label for="log-date" class="block text-sm font-medium text-gray-700 mb-1">Select Date for Log:</label>
+            <div class="flex items-center space-x-2">
+                <input type="date" id="log-date"
+                    class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <div class="date-quick-select flex shadow-sm rounded-md">
+                    <button id="yesterday-btn"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 rounded-l-md transition-colors text-sm">Yesterday</button>
+                    <button id="today-btn"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 rounded-r-md border-l border-gray-300 transition-colors text-sm">Today</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group flex mb-6 shadow-sm rounded-lg">
+            <select id="coffee-type-select"
+                class="flex-grow p-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                <option value="">Loading coffee types...</option>
+            </select>
+            <button id="add-coffee-btn"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold p-3 rounded-r-lg transition-colors duration-150 ease-in-out focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                    stroke="currentColor" class="w-5 h-5 inline-block mr-1 align-middle">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">Log for <span
+                        id="selected-date-display-log"></span>:</h2>
+                <ul id="coffee-list"
+                    class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar bg-gray-50 p-3 rounded-md border">
+                </ul>
+                <p id="no-coffee-msg" class="text-center text-gray-500 py-3 italic" style="display: none;">No coffees
+                    logged.</p>
+            </div>
+            <div>
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">Costs for <span
+                        id="selected-date-display-cost"></span>:</h2>
+                <div class="bg-indigo-50 p-3 rounded-lg shadow-sm mb-3">
+                    <p class="text-lg font-semibold text-indigo-700">Total Coffees: <span id="coffee-count"
+                            class="text-xl">0</span></p>
+                    <p class="text-lg font-semibold text-indigo-700">Total Cost: <span id="total-daily-cost"
+                            class="text-xl">€0.00</span></p>
+                </div>
+                <h3 class="text-md font-semibold text-gray-600 mb-2">Cost Breakdown by Type:</h3>
+                <ul id="daily-cost-breakdown-list"
+                    class="space-y-1 max-h-40 overflow-y-auto pr-2 custom-scrollbar bg-gray-50 p-3 rounded-md border">
+                </ul>
+                <p id="no-cost-breakdown-msg" class="text-center text-gray-500 py-3 italic" style="display: none;">No
+                    costs to display.</p>
+            </div>
+        </div>
+        <button id="clear-day-btn"
+            class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out focus:ring-2 focus:ring-red-400 focus:ring-offset-1">
+            Clear Log for <span id="selected-date-display-clear"></span>
+        </button>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Monthly Reports</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 report-input items-end">
+            <div>
+                <label for="report-year-monthly" class="block text-sm font-medium text-gray-700 mb-1">Year:</label>
+                <input type="number" id="report-year-monthly" placeholder="YYYY"
+                    class="w-full p-3 border border-gray-300 rounded-lg shadow-sm">
+            </div>
+            <div>
+                <label for="report-month" class="block text-sm font-medium text-gray-700 mb-1">Month:</label>
+                <select id="report-month"
+                    class="w-full p-3 border border-gray-300 rounded-lg shadow-sm bg-white"></select>
+            </div>
+            <div>
+                <label for="report-coffee-type-monthly" class="block text-sm font-medium text-gray-700 mb-1">Coffee
+                    Type:</label>
+                <select id="report-coffee-type-monthly"
+                    class="w-full p-3 border border-gray-300 rounded-lg shadow-sm bg-white">
+                    <option value="All">All Types</option>
+                </select>
+            </div>
+        </div>
+        <button id="generate-monthly-report-btn"
+            class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out mb-6 focus:ring-2 focus:ring-green-500 focus:ring-offset-1">
+            Generate Monthly Report
+        </button>
+        <div id="monthly-report-results-area" class="bg-gray-50 p-4 rounded-lg border" style="display: none;">
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Monthly Report Results:</h3>
+            <p><strong>Period:</strong> <span id="monthly-report-period"></span></p>
+            <p><strong>Type Filter:</strong> <span id="monthly-report-type-filter"></span></p>
+            <p><strong>Overall Total Coffees:</strong> <span id="monthly-report-total-coffees"></span></p>
+            <p><strong>Overall Total Cost:</strong> <span id="monthly-report-total-cost" class="font-bold"></span></p>
+            <div id="monthly-report-breakdown-container" class="mt-4" style="display: none;">
+                <h4 class="text-lg font-semibold text-gray-600 mb-2">Breakdown by Type:</h4>
+                <ul id="monthly-report-breakdown-list"
+                    class="space-y-1 max-h-48 overflow-y-auto pr-2 custom-scrollbar bg-gray-100 p-3 rounded-md border">
+                </ul>
+            </div>
+        </div>
+        <p id="no-monthly-report-data-msg" class="text-center text-gray-500 py-3 italic" style="display: none;">No data
+            for the selected period/filter.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Yearly Reports</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 report-input items-end">
+            <div>
+                <label for="report-year-yearly" class="block text-sm font-medium text-gray-700 mb-1">Year:</label>
+                <input type="number" id="report-year-yearly" placeholder="YYYY"
+                    class="w-full p-3 border border-gray-300 rounded-lg shadow-sm">
+            </div>
+            <div>
+                <label for="report-coffee-type-yearly" class="block text-sm font-medium text-gray-700 mb-1">Coffee
+                    Type:</label>
+                <select id="report-coffee-type-yearly"
+                    class="w-full p-3 border border-gray-300 rounded-lg shadow-sm bg-white">
+                    <option value="All">All Types</option>
+                </select>
+            </div>
+        </div>
+        <button id="generate-yearly-report-btn"
+            class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out mb-6 focus:ring-2 focus:ring-sky-500 focus:ring-offset-1">
+            Generate Yearly Report
+        </button>
+        <div id="yearly-report-results-area" class="bg-gray-50 p-4 rounded-lg border" style="display: none;">
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Yearly Report Results:</h3>
+            <p><strong>Period:</strong> Year <span id="yearly-report-period"></span></p>
+            <p><strong>Type Filter:</strong> <span id="yearly-report-type-filter"></span></p>
+            <p><strong>Overall Total Coffees:</strong> <span id="yearly-report-total-coffees"></span></p>
+            <p><strong>Overall Total Cost:</strong> <span id="yearly-report-total-cost" class="font-bold"></span></p>
+            <div id="yearly-report-breakdown-container" class="mt-4" style="display: none;">
+                <h4 class="text-lg font-semibold text-gray-600 mb-2">Breakdown by Type:</h4>
+                <ul id="yearly-report-breakdown-list"
+                    class="space-y-1 max-h-48 overflow-y-auto pr-2 custom-scrollbar bg-gray-100 p-3 rounded-md border">
+                </ul>
+            </div>
+        </div>
+        <p id="no-yearly-report-data-msg" class="text-center text-gray-500 py-3 italic" style="display: none;">No data
+            for the selected year/filter.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Coffee Fun Fact!</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 fun-fact-input items-end">
+            <div>
+                <label for="fun-fact-year" class="block text-sm font-medium text-gray-700 mb-1">Select Year:</label>
+                <input type="number" id="fun-fact-year" placeholder="YYYY"
+                    class="w-full p-3 border border-gray-300 rounded-lg shadow-sm">
+            </div>
+            <button id="show-fun-fact-btn"
+                class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out focus:ring-2 focus:ring-purple-500 focus:ring-offset-1">
+                Show Volume Fact
+            </button>
+        </div>
+        <div id="fun-fact-display-area" class="bg-purple-50 p-4 rounded-lg border border-purple-200 text-center"
+            style="display: none;">
+            <p class="text-lg text-purple-700">In <span id="fun-fact-year-display" class="font-semibold"></span>, you
+                consumed approximately <span id="fun-fact-volume" class="font-bold text-xl">0</span> ml of coffee!</p>
+        </div>
+        <p id="no-fun-fact-data-msg" class="text-center text-gray-500 py-3 italic" style="display: none;">Select a year
+            to see the fun fact.</p>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements - Daily Tracker
+            const logDateInput = document.getElementById('log-date');
+            const yesterdayBtn = document.getElementById('yesterday-btn');
+            const todayBtn = document.getElementById('today-btn');
+            const coffeeTypeSelect = document.getElementById('coffee-type-select');
+            const addCoffeeBtn = document.getElementById('add-coffee-btn');
+            const coffeeListUl = document.getElementById('coffee-list');
+            const noCoffeeMsg = document.getElementById('no-coffee-msg');
+            const coffeeCountSpan = document.getElementById('coffee-count');
+            const totalDailyCostSpan = document.getElementById('total-daily-cost');
+            const dailyCostBreakdownListUl = document.getElementById('daily-cost-breakdown-list');
+            const noCostBreakdownMsg = document.getElementById('no-cost-breakdown-msg');
+            const clearDayBtn = document.getElementById('clear-day-btn');
+            const messageBox = document.getElementById('message-box');
+            const selectedDateDisplayLog = document.getElementById('selected-date-display-log');
+            const selectedDateDisplayCost = document.getElementById('selected-date-display-cost');
+            const selectedDateDisplayClear = document.getElementById('selected-date-display-clear');
+
+            // DOM Elements - Monthly Report
+            const reportYearMonthlyInput = document.getElementById('report-year-monthly');
+            const reportMonthSelect = document.getElementById('report-month');
+            const reportCoffeeTypeMonthlySelect = document.getElementById('report-coffee-type-monthly');
+            const generateMonthlyReportBtn = document.getElementById('generate-monthly-report-btn');
+            const monthlyReportResultsArea = document.getElementById('monthly-report-results-area');
+            const monthlyReportPeriodSpan = document.getElementById('monthly-report-period');
+            const monthlyReportTypeFilterSpan = document.getElementById('monthly-report-type-filter');
+            const monthlyReportTotalCoffeesSpan = document.getElementById('monthly-report-total-coffees');
+            const monthlyReportTotalCostSpan = document.getElementById('monthly-report-total-cost');
+            const monthlyReportBreakdownContainer = document.getElementById('monthly-report-breakdown-container');
+            const monthlyReportBreakdownList = document.getElementById('monthly-report-breakdown-list');
+            const noMonthlyReportDataMsg = document.getElementById('no-monthly-report-data-msg');
+
+            // DOM Elements - Yearly Report
+            const reportYearYearlyInput = document.getElementById('report-year-yearly');
+            const reportCoffeeTypeYearlySelect = document.getElementById('report-coffee-type-yearly');
+            const generateYearlyReportBtn = document.getElementById('generate-yearly-report-btn');
+            const yearlyReportResultsArea = document.getElementById('yearly-report-results-area');
+            const yearlyReportPeriodSpan = document.getElementById('yearly-report-period');
+            const yearlyReportTypeFilterSpan = document.getElementById('yearly-report-type-filter');
+            const yearlyReportTotalCoffeesSpan = document.getElementById('yearly-report-total-coffees');
+            const yearlyReportTotalCostSpan = document.getElementById('yearly-report-total-cost');
+            const yearlyReportBreakdownContainer = document.getElementById('yearly-report-breakdown-container');
+            const yearlyReportBreakdownList = document.getElementById('yearly-report-breakdown-list');
+            const noYearlyReportDataMsg = document.getElementById('no-yearly-report-data-msg');
+
+            // DOM Elements - Fun Fact
+            const funFactYearInput = document.getElementById('fun-fact-year');
+            const showFunFactBtn = document.getElementById('show-fun-fact-btn');
+            const funFactDisplayArea = document.getElementById('fun-fact-display-area');
+            const funFactYearDisplaySpan = document.getElementById('fun-fact-year-display');
+            const funFactVolumeSpan = document.getElementById('fun-fact-volume');
+            const noFunFactDataMsg = document.getElementById('no-fun-fact-data-msg');
+
+
+            let dailyCoffees = [];
+            let coffeeTypeDefinitions = {}; // Stores {name: {cost: X, volume: Y}}
+
+            // --- Utility Functions ---
+            const getFormattedDate = (dateObj) => {
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            const showMessage = (message, type = 'success') => {
+                messageBox.textContent = message;
+                messageBox.className = `message-box ${type} show`;
+                setTimeout(() => { messageBox.classList.remove('show'); }, 3000);
+            };
+
+            // --- Initialization ---
+            const initializePage = async () => {
+                const today = new Date();
+                logDateInput.value = getFormattedDate(today);
+                updateSelectedDateDisplays(logDateInput.value);
+
+                await fetchCoffeeDefinitions(); // Fetches types, costs, and volumes
+                populateReportSelects(); // Populates type dropdowns for reports
+                populateMonthYearInputs(); // Populates year/month inputs for reports & fun fact
+
+                await loadDailyLog();
+
+                // Event Listeners
+                logDateInput.addEventListener('change', () => {
+                    updateSelectedDateDisplays(logDateInput.value);
+                    loadDailyLog();
+                });
+                todayBtn.addEventListener('click', () => setDateAndReload(new Date()));
+                yesterdayBtn.addEventListener('click', () => {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    setDateAndReload(yesterday);
+                });
+                addCoffeeBtn.addEventListener('click', handleAddCoffee);
+                clearDayBtn.addEventListener('click', handleClearDay);
+                generateMonthlyReportBtn.addEventListener('click', handleGenerateMonthlyReport);
+                generateYearlyReportBtn.addEventListener('click', handleGenerateYearlyReport);
+                showFunFactBtn.addEventListener('click', handleShowFunFact);
+            };
+
+            const setDateAndReload = (dateObj) => {
+                logDateInput.value = getFormattedDate(dateObj);
+                logDateInput.dispatchEvent(new Event('change', { bubbles: true }));
+            };
+
+            const updateSelectedDateDisplays = (dateString) => {
+                if (!dateString) {
+                    const today = new Date();
+                    dateString = getFormattedDate(today);
+                }
+                // Ensure dateString is treated as local time for display
+                const parts = dateString.split('-');
+                const displayDateObj = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]); // Month is 0-indexed
+                const displayDate = displayDateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+
+                selectedDateDisplayLog.textContent = displayDate;
+                selectedDateDisplayCost.textContent = displayDate;
+                selectedDateDisplayClear.textContent = displayDate;
+            };
+
+            const fetchCoffeeDefinitions = async () => {
+                try {
+                    const response = await fetch('/api/coffee-types'); // This API now returns name, cost, and volume
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const types = await response.json(); // Expects list of {name, cost, volume}
+
+                    coffeeTypeSelect.innerHTML = '<option value="">-- Select Coffee Type --</option>';
+                    coffeeTypeDefinitions = {}; // Reset
+                    types.forEach(type => {
+                        coffeeTypeDefinitions[type.name] = { cost: type.cost, volume: type.volume }; // Store cost and volume
+                        const option = document.createElement('option');
+                        option.value = type.name;
+                        option.textContent = `${type.name} (€${type.cost.toFixed(2)})`;
+                        coffeeTypeSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error("Error fetching coffee definitions:", error);
+                    showMessage("Could not load coffee types.", "error");
+                    coffeeTypeSelect.innerHTML = '<option value="">Error loading types</option>';
+                }
+            };
+
+            const populateReportSelects = () => {
+                // For Monthly Report Type Filter
+                reportCoffeeTypeMonthlySelect.innerHTML = '<option value="All">All Types</option>';
+                // For Yearly Report Type Filter
+                reportCoffeeTypeYearlySelect.innerHTML = '<option value="All">All Types</option>';
+
+                // Ensure coffeeTypeDefinitions is populated before trying to use its keys
+                if (Object.keys(coffeeTypeDefinitions).length > 0) {
+                    Object.keys(coffeeTypeDefinitions).sort().forEach(typeName => {
+                        const monthlyOption = document.createElement('option');
+                        monthlyOption.value = typeName;
+                        monthlyOption.textContent = typeName;
+                        reportCoffeeTypeMonthlySelect.appendChild(monthlyOption);
+
+                        const yearlyOption = document.createElement('option');
+                        yearlyOption.value = typeName;
+                        yearlyOption.textContent = typeName;
+                        reportCoffeeTypeYearlySelect.appendChild(yearlyOption);
+                    });
+                } else {
+                    console.warn("Coffee definitions not yet loaded for populating report selects.");
+                }
+            };
+
+            const populateMonthYearInputs = () => {
+                const currentYear = new Date().getFullYear();
+                const currentMonth = new Date().getMonth() + 1;
+
+                // Monthly Report Defaults
+                reportYearMonthlyInput.value = currentYear;
+                reportYearMonthlyInput.min = currentYear - 10;
+                reportYearMonthlyInput.max = currentYear + 1;
+                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                reportMonthSelect.innerHTML = '';
+                monthNames.forEach((name, index) => {
+                    const option = document.createElement('option');
+                    option.value = index + 1;
+                    option.textContent = name;
+                    reportMonthSelect.appendChild(option);
+                });
+                reportMonthSelect.value = currentMonth;
+
+                // Yearly Report Default
+                reportYearYearlyInput.value = currentYear;
+                reportYearYearlyInput.min = currentYear - 10;
+                reportYearYearlyInput.max = currentYear + 1;
+
+                // Fun Fact Default Year
+                funFactYearInput.value = currentYear;
+                funFactYearInput.min = currentYear - 10;
+                funFactYearInput.max = currentYear + 1;
+            };
+
+            // --- Daily Log Functions ---
+            const loadDailyLog = async () => {
+                let selectedDate = logDateInput.value;
+                if (!selectedDate) {
+                    const today = new Date();
+                    selectedDate = getFormattedDate(today);
+                    logDateInput.value = selectedDate;
+                    updateSelectedDateDisplays(selectedDate); // Update display if date was defaulted
+                }
+                try {
+                    const response = await fetch(`/api/coffees/${selectedDate}`);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`Failed to load log: ${response.status}. ${errorData.error || ''}`);
+                    }
+                    dailyCoffees = await response.json();
+                } catch (error) {
+                    console.error("Error loading daily log:", error);
+                    showMessage(`Error loading log for ${selectedDate}: ${error.message}`, "error");
+                    dailyCoffees = [];
+                }
+                renderDailyLogAndCosts();
+            };
+
+            const renderDailyLogAndCosts = () => {
+                coffeeListUl.innerHTML = '';
+                let totalCost = 0;
+                const costsByType = {};
+                const countsByType = {};
+
+                if (dailyCoffees.length === 0) {
+                    noCoffeeMsg.style.display = 'block';
+                    noCostBreakdownMsg.style.display = 'block';
+                    noCostBreakdownMsg.textContent = 'No costs to display.';
+                } else {
+                    noCoffeeMsg.style.display = 'none';
+                    noCostBreakdownMsg.style.display = 'none';
+                    dailyCoffees.forEach(coffee => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'coffee-item bg-white p-2.5 rounded-md shadow-sm border border-gray-200 flex justify-between items-center text-sm';
+                        listItem.textContent = `${coffee.type} (at ${coffee.time})`;
+                        coffeeListUl.appendChild(listItem);
+
+                        const definition = coffeeTypeDefinitions[coffee.type];
+                        const cost = definition ? definition.cost : 0;
+                        totalCost += cost;
+                        costsByType[coffee.type] = (costsByType[coffee.type] || 0) + cost;
+                        countsByType[coffee.type] = (countsByType[coffee.type] || 0) + 1;
+                    });
+                }
+
+                coffeeCountSpan.textContent = dailyCoffees.length;
+                totalDailyCostSpan.textContent = `€${totalCost.toFixed(2)}`;
+
+                dailyCostBreakdownListUl.innerHTML = '';
+                if (Object.keys(costsByType).length > 0) {
+                    Object.keys(costsByType).sort().forEach(type => { // Sort for consistent order
+                        const count = countsByType[type] || 0;
+                        const costItem = document.createElement('li');
+                        costItem.className = 'cost-item flex justify-between items-center text-sm p-1.5 bg-white rounded';
+                        costItem.innerHTML = `<span>${type} (x${count}):</span> <span class="font-medium">€${costsByType[type].toFixed(2)}</span>`;
+                        dailyCostBreakdownListUl.appendChild(costItem);
+                    });
+                } else if (dailyCoffees.length > 0) {
+                    noCostBreakdownMsg.style.display = 'block';
+                    noCostBreakdownMsg.textContent = 'Cost data unavailable for these types.';
+                } else {
+                    noCostBreakdownMsg.textContent = 'No costs to display.';
+                }
+            };
+
+            const handleAddCoffee = async () => {
+                const selectedCoffeeType = coffeeTypeSelect.value;
+                const selectedDate = logDateInput.value;
+                if (!selectedCoffeeType || !selectedDate) {
+                    showMessage("Please select coffee type and date.", "error"); return;
+                }
+                const now = new Date();
+                const coffeeTime = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+                const newCoffeeData = { type: selectedCoffeeType, time: coffeeTime };
+                try {
+                    const response = await fetch(`/api/coffees/${selectedDate}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newCoffeeData)
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`Failed to add coffee: ${response.status}. ${errorData.error || ''}`);
+                    }
+                    showMessage(`${selectedCoffeeType} added for ${selectedDate}!`, "success");
+                    await loadDailyLog();
+                    coffeeTypeSelect.value = "";
+                } catch (error) {
+                    console.error("Error adding coffee:", error);
+                    showMessage(`Error adding coffee: ${error.message}`, "error");
+                }
+            };
+
+            const handleClearDay = async () => {
+                const selectedDate = logDateInput.value;
+                if (!selectedDate || dailyCoffees.length === 0) {
+                    showMessage("No date selected or nothing to clear.", "error"); return;
+                }
+                if (confirm(`Are you sure you want to clear all coffees for ${selectedDate}?`)) {
+                    try {
+                        const response = await fetch(`/api/coffees/${selectedDate}`, { method: 'DELETE' });
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(`Failed to clear log: ${response.status}. ${errorData.error || ''}`);
+                        }
+                        showMessage(`Log for ${selectedDate} cleared.`, "success");
+                        await loadDailyLog();
+                    } catch (error) {
+                        console.error("Error clearing log:", error);
+                        showMessage(`Error clearing log: ${error.message}`, "error");
+                    }
+                }
+            };
+
+            // --- Report Rendering Helper ---
+            const renderReportBreakdown = (listElement, breakdownData) => {
+                listElement.innerHTML = ''; // Clear previous breakdown
+                if (!breakdownData || Object.keys(breakdownData).length === 0) {
+                    const noBreakdownItem = document.createElement('li');
+                    noBreakdownItem.textContent = "No specific type data for this selection.";
+                    noBreakdownItem.className = "italic text-gray-500 text-sm";
+                    listElement.appendChild(noBreakdownItem);
+                    return;
+                }
+                const sortedTypes = Object.keys(breakdownData).sort();
+                for (const typeName of sortedTypes) {
+                    const details = breakdownData[typeName];
+                    const listItem = document.createElement('li');
+                    listItem.className = 'report-breakdown-item flex justify-between items-center text-sm p-1.5 bg-white rounded shadow-sm';
+                    listItem.innerHTML = `
+                        <span>${typeName} (x${details.count}):</span>
+                        <span class="font-medium">€${details.cost.toFixed(2)}</span>
+                    `;
+                    listElement.appendChild(listItem);
+                }
+            };
+
+            // --- Monthly Report Functions ---
+            const handleGenerateMonthlyReport = async () => {
+                const year = reportYearMonthlyInput.value;
+                const month = reportMonthSelect.value;
+                const typeFilter = reportCoffeeTypeMonthlySelect.value;
+                if (!year || !month) {
+                    showMessage("Please select year and month for the monthly report.", "error"); return;
+                }
+                try {
+                    const response = await fetch(`/api/reports/monthly?year=${year}&month=${month}&type=${encodeURIComponent(typeFilter)}`);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`Failed to generate report: ${response.status}. ${errorData.error || ''}`);
+                    }
+                    const reportData = await response.json();
+
+                    monthlyReportPeriodSpan.textContent = `${reportMonthSelect.options[reportMonthSelect.selectedIndex].text} ${year}`;
+                    monthlyReportTypeFilterSpan.textContent = reportData.coffee_type_filter;
+                    monthlyReportTotalCoffeesSpan.textContent = reportData.total_coffees;
+                    monthlyReportTotalCostSpan.textContent = `€${reportData.total_cost.toFixed(2)}`;
+
+                    if (reportData.total_coffees === 0) {
+                        monthlyReportResultsArea.style.display = 'block';
+                        monthlyReportBreakdownContainer.style.display = 'none';
+                        noMonthlyReportDataMsg.style.display = 'block';
+                        noMonthlyReportDataMsg.textContent = (typeFilter === 'All') ? 'No coffee data found for the selected period.' : `No '${typeFilter}' coffee data found.`;
+                    } else {
+                        monthlyReportResultsArea.style.display = 'block';
+                        noMonthlyReportDataMsg.style.display = 'none';
+                        // Show breakdown if filter was 'All' and there's breakdown data
+                        if (typeFilter === 'All' && reportData.breakdown_by_type && Object.keys(reportData.breakdown_by_type).length > 0) {
+                            renderReportBreakdown(monthlyReportBreakdownList, reportData.breakdown_by_type);
+                            monthlyReportBreakdownContainer.style.display = 'block';
+                        } else {
+                            monthlyReportBreakdownContainer.style.display = 'none';
+                        }
+                    }
+                    showMessage("Monthly report generated!", "success");
+                } catch (error) {
+                    console.error("Error generating monthly report:", error);
+                    showMessage(`Error generating monthly report: ${error.message}`, "error");
+                    monthlyReportResultsArea.style.display = 'none';
+                    noMonthlyReportDataMsg.style.display = 'block';
+                    noMonthlyReportDataMsg.textContent = `Error generating report.`;
+                }
+            };
+
+            // --- Yearly Report Functions ---
+            const handleGenerateYearlyReport = async () => {
+                const year = reportYearYearlyInput.value;
+                const typeFilter = reportCoffeeTypeYearlySelect.value;
+                if (!year) {
+                    showMessage("Please select a year for the yearly report.", "error"); return;
+                }
+                try {
+                    const response = await fetch(`/api/reports/yearly?year=${year}&type=${encodeURIComponent(typeFilter)}`);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`Failed to generate report: ${response.status}. ${errorData.error || ''}`);
+                    }
+                    const reportData = await response.json();
+
+                    yearlyReportPeriodSpan.textContent = year;
+                    yearlyReportTypeFilterSpan.textContent = reportData.coffee_type_filter;
+                    yearlyReportTotalCoffeesSpan.textContent = reportData.total_coffees;
+                    yearlyReportTotalCostSpan.textContent = `€${reportData.total_cost.toFixed(2)}`;
+
+                    if (reportData.total_coffees === 0) {
+                        yearlyReportResultsArea.style.display = 'block';
+                        yearlyReportBreakdownContainer.style.display = 'none';
+                        noYearlyReportDataMsg.style.display = 'block';
+                        noYearlyReportDataMsg.textContent = (typeFilter === 'All') ? `No coffee data found for ${year}.` : `No '${typeFilter}' coffee data found for ${year}.`;
+                    } else {
+                        yearlyReportResultsArea.style.display = 'block';
+                        noYearlyReportDataMsg.style.display = 'none';
+                        // Show breakdown if filter was 'All' and there's breakdown data
+                        if (typeFilter === 'All' && reportData.breakdown_by_type && Object.keys(reportData.breakdown_by_type).length > 0) {
+                            renderReportBreakdown(yearlyReportBreakdownList, reportData.breakdown_by_type);
+                            yearlyReportBreakdownContainer.style.display = 'block';
+                        } else {
+                            yearlyReportBreakdownContainer.style.display = 'none';
+                        }
+                    }
+                    showMessage("Yearly report generated!", "success");
+                } catch (error) {
+                    console.error("Error generating yearly report:", error);
+                    showMessage(`Error generating yearly report: ${error.message}`, "error");
+                    yearlyReportResultsArea.style.display = 'none';
+                    noYearlyReportDataMsg.style.display = 'block';
+                    noYearlyReportDataMsg.textContent = `Error generating report.`;
+                }
+            };
+
+            // --- Fun Fact Function ---
+            const handleShowFunFact = async () => {
+                const year = funFactYearInput.value;
+                if (!year) {
+                    showMessage("Please select a year for the fun fact.", "error");
+                    noFunFactDataMsg.style.display = 'block';
+                    noFunFactDataMsg.textContent = 'Please select a year.';
+                    funFactDisplayArea.style.display = 'none';
+                    return;
+                }
+                try {
+                    const response = await fetch(`/api/fun-facts/yearly-volume?year=${year}`);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`Failed to get fun fact: ${response.status}. ${errorData.error || ''}`);
+                    }
+                    const factData = await response.json();
+                    funFactYearDisplaySpan.textContent = factData.year;
+                    funFactVolumeSpan.textContent = factData.total_volume_ml.toLocaleString(); // Add thousands separator
+                    funFactDisplayArea.style.display = 'block';
+                    noFunFactDataMsg.style.display = 'none';
+                    showMessage("Fun fact loaded!", "success");
+                } catch (error) {
+                    console.error("Error getting fun fact:", error);
+                    showMessage(`Error getting fun fact: ${error.message}`, "error");
+                    funFactDisplayArea.style.display = 'none';
+                    noFunFactDataMsg.style.display = 'block';
+                    noFunFactDataMsg.textContent = 'Could not load fun fact.';
+                }
+            };
+
+            // --- Start the page ---
+            initializePage();
+        });
+    </script>
+</body>
+
+</html>
