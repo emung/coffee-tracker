@@ -47,8 +47,8 @@ COFFEE_COSTS = {
     "Roma": 0.50, "Arpeggio": 0.50, "Livanto": 0.50, "Volluto Decaf": 0.52
 }
 COFFEE_VOLUMES = { # in ml
-    "Chiaro": 50, "Cosi": 50, "Buenos Aires": 110, "Vienna": 110,
-    "Roma": 50, "Arpeggio": 50, "Livanto": 50, "Volluto Decaf": 110
+    "Chiaro": 40, "Cosi": 40, "Buenos Aires": 90, "Vienna": 90,
+    "Roma": 40, "Arpeggio": 40, "Livanto": 40, "Volluto Decaf": 90
 }
 
 # --- Authentication Decorator ---

@@ -1,5 +1,4 @@
 // Contents of static/js/coffee_tracker.js
-
 document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements - Daily Tracker (Advanced View)
   const logDateInput = document.getElementById("log-date");
@@ -127,12 +126,24 @@ document.addEventListener("DOMContentLoaded", () => {
   let dailyCoffees = []; // For advanced view's detailed log
   let coffeeTypeDefinitions = {}; // Stores { name: { cost: X, volume: Y } }
 
+  // Mapping for coffee images
+  const coffeeImageMapping = {
+    Arpeggio: "arpeggio.avif",
+    "Buenos Aires": "buenos-aires.avif",
+    Chiaro: "chiaro.avif",
+    Cosi: "cosi.avif",
+    Livanto: "livanto.avif",
+    Roma: "roma.avif",
+    Vienna: "vienna.avif",
+    "Volluto Decaf": "volluto-decaf.webp",
+    // Add other mappings here if new coffees with images are introduced
+  };
+
   // --- Utility Functions ---
   const getFormattedDate = (dateObj) => {
-    // Ensure dateObj is a Date object
     if (!(dateObj instanceof Date) || isNaN(dateObj)) {
       console.error("Invalid date object passed to getFormattedDate:", dateObj);
-      const today = new Date(); // Fallback to today
+      const today = new Date();
       return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
         2,
         "0"
@@ -157,57 +168,48 @@ document.addEventListener("DOMContentLoaded", () => {
     const today = new Date();
     const todayFormatted = getFormattedDate(today);
 
-    // Set initial dates for both inputs
     logDateInput.value = todayFormatted;
     logDateInputSimple.value = todayFormatted;
 
-    updateSelectedDateDisplays(todayFormatted); // For advanced view
-    updateSimpleSelectedDateDisplay(todayFormatted); // For simple view
+    updateSelectedDateDisplays(todayFormatted);
+    updateSimpleSelectedDateDisplay(todayFormatted);
 
     try {
-      await fetchCoffeeDefinitions(); // Load coffee types, costs, and volumes
-      populateReportSelects(); // Populate report dropdowns (advanced view)
-      populateSimpleCoffeeButtons(); // Populate simple view coffee buttons
+      await fetchCoffeeDefinitions();
+      populateReportSelects();
+      populateSimpleCoffeeButtons(); // This will now use the image mapping
     } catch (error) {
       console.error("Initialization error:", error);
       showMessage("Error initializing page data.", "error");
     }
 
-    populateMonthYearInputs(); // For reports (advanced view)
+    populateMonthYearInputs();
 
-    // Initial View Setup (Default to Advanced)
-    viewModeToggle.checked = false; // false = Advanced, true = Simple
-    toggleViewMode(); // Call to set initial visibility and labels
+    viewModeToggle.checked = false;
+    toggleViewMode();
 
-    // Load initial data for the active view
     if (!viewModeToggle.checked) {
-      // Advanced view is active
       await loadDailyLog();
     } else {
-      // Simple view is active
       await loadAndDisplaySimpleCoffeeCount();
     }
 
-    // --- Event Listeners ---
-
-    // View Mode Toggle
+    // Event Listeners
     viewModeToggle.addEventListener("change", toggleViewMode);
 
-    // Advanced View Date Controls
     logDateInput.addEventListener("change", () => {
       const newDate = logDateInput.value;
-      logDateInputSimple.value = newDate; // Sync to simple view
+      logDateInputSimple.value = newDate;
       updateSelectedDateDisplays(newDate);
-      updateSimpleSelectedDateDisplay(newDate); // Also update simple view's date display text
-      loadDailyLog(); // Load data for advanced view
+      updateSimpleSelectedDateDisplay(newDate);
+      loadDailyLog();
       if (viewModeToggle.checked) {
-        // If simple view is somehow active, refresh its count too
         loadAndDisplaySimpleCoffeeCount();
       }
     });
 
     const navigateDateAdvanced = (daysToChange) => {
-      const currentDate = new Date(logDateInput.value + "T00:00:00"); // Ensure parsing as local
+      const currentDate = new Date(logDateInput.value + "T00:00:00");
       currentDate.setDate(currentDate.getDate() + daysToChange);
       logDateInput.value = getFormattedDate(currentDate);
       logDateInput.dispatchEvent(new Event("change"));
@@ -229,21 +231,19 @@ document.addEventListener("DOMContentLoaded", () => {
         logDateInput.dispatchEvent(new Event("change"));
       });
 
-    // Simple View Date Controls
     logDateInputSimple.addEventListener("change", () => {
       const newDate = logDateInputSimple.value;
-      logDateInput.value = newDate; // Sync to advanced view
+      logDateInput.value = newDate;
       updateSimpleSelectedDateDisplay(newDate);
-      updateSelectedDateDisplays(newDate); // Also update advanced view's date display text
-      loadAndDisplaySimpleCoffeeCount(); // Load data for simple view
+      updateSelectedDateDisplays(newDate);
+      loadAndDisplaySimpleCoffeeCount();
       if (!viewModeToggle.checked) {
-        // If advanced view is somehow active, refresh its log
         loadDailyLog();
       }
     });
 
     const navigateDateSimple = (daysToChange) => {
-      const currentDate = new Date(logDateInputSimple.value + "T00:00:00"); // Ensure parsing as local
+      const currentDate = new Date(logDateInputSimple.value + "T00:00:00");
       currentDate.setDate(currentDate.getDate() + daysToChange);
       logDateInputSimple.value = getFormattedDate(currentDate);
       logDateInputSimple.dispatchEvent(new Event("change"));
@@ -266,7 +266,6 @@ document.addEventListener("DOMContentLoaded", () => {
         logDateInputSimple.dispatchEvent(new Event("change"));
       });
 
-    // Other Advanced View Event Listeners
     if (addCoffeeBtn) addCoffeeBtn.addEventListener("click", handleAddCoffee);
     if (clearDayBtn) clearDayBtn.addEventListener("click", handleClearDay);
     if (generateMonthlyReportBtn)
@@ -291,18 +290,15 @@ document.addEventListener("DOMContentLoaded", () => {
       viewModeLabel.textContent = "Switch to Advanced View";
       advancedViewWrapper.style.display = "none";
       simpleViewWrapper.style.display = "block";
-      // Ensure date is synced and load data for simple view
       logDateInputSimple.value = logDateInput.value;
       updateSimpleSelectedDateDisplay(logDateInputSimple.value);
-      populateSimpleCoffeeButtons(); // Re-populate in case definitions were slow or for future dynamic changes
+      populateSimpleCoffeeButtons();
       loadAndDisplaySimpleCoffeeCount();
     } else {
-      // Advanced View
       mainTitle.textContent = "Advanced Coffee Tracker";
       viewModeLabel.textContent = "Switch to Simple View";
       advancedViewWrapper.style.display = "block";
       simpleViewWrapper.style.display = "none";
-      // Ensure date is synced and load data for advanced view
       logDateInput.value = logDateInputSimple.value;
       updateSelectedDateDisplays(logDateInput.value);
       loadDailyLog();
@@ -317,9 +313,8 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       const types = await response.json();
 
-      coffeeTypeDefinitions = {}; // Reset
+      coffeeTypeDefinitions = {};
       if (coffeeTypeSelect) {
-        // Check if element exists (for advanced view)
         coffeeTypeSelect.innerHTML =
           '<option value="">-- Select Coffee Type --</option>';
       }
@@ -342,12 +337,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (coffeeTypeSelect)
         coffeeTypeSelect.innerHTML =
           '<option value="">Error loading types</option>';
-      throw error; // Re-throw to be caught by initializer if needed
+      throw error;
     }
   };
 
   const populateReportSelects = () => {
-    if (!reportCoffeeTypeMonthlySelect || !reportCoffeeTypeYearlySelect) return; // Elements might not exist if view is simplified
+    if (!reportCoffeeTypeMonthlySelect || !reportCoffeeTypeYearlySelect) return;
 
     reportCoffeeTypeMonthlySelect.innerHTML =
       '<option value="All">All Types</option>';
@@ -385,7 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     reportYearMonthlyInput.value = currentYear;
     reportYearMonthlyInput.min = currentYear - 10;
-    reportYearMonthlyInput.max = currentYear + 5; // Allow future years
+    reportYearMonthlyInput.max = currentYear + 5;
 
     const monthNames = [
       "January",
@@ -427,7 +422,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     try {
-      // Add "T00:00:00" to ensure it's parsed as local date, not UTC, by new Date()
       const displayDateObj = new Date(dateString + "T00:00:00");
       const displayDate = displayDateObj.toLocaleDateString(undefined, {
         month: "long",
@@ -440,24 +434,68 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  /**
+   * Populates the simple coffee buttons container with quadratic buttons
+   * that include an image and text (name, volume).
+   */
   const populateSimpleCoffeeButtons = () => {
     if (!simpleCoffeeButtonsContainer) return;
     simpleCoffeeButtonsContainer.innerHTML = ""; // Clear existing buttons
 
     if (Object.keys(coffeeTypeDefinitions).length > 0) {
+      // Sort coffee types alphabetically by name for consistent order
       Object.entries(coffeeTypeDefinitions)
         .sort((a, b) => a[0].localeCompare(b[0]))
         .forEach(([name, def]) => {
           const button = document.createElement("button");
-          button.className =
-            "simple-coffee-btn bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white p-2 rounded-lg w-full aspect-square flex flex-col justify-center items-center text-center shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 text-xs sm:text-sm";
+          // Tailwind classes for a quadratic button with flex column layout
+          // p-2 for padding inside the button.
+          // justify-between to push image to top and text to bottom within the flex container.
+          button.className = `
+                        simple-coffee-btn 
+                        bg-indigo-500 hover:bg-indigo-600 
+                        dark:bg-indigo-600 dark:hover:bg-indigo-700 
+                        text-white 
+                        p-2 rounded-lg w-full aspect-square 
+                        flex flex-col justify-between items-center 
+                        text-center shadow-md transition-colors 
+                        focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 
+                        overflow-hidden`; // Added overflow-hidden
           button.dataset.coffeeType = name;
-          button.innerHTML = `
-                    <span class="block font-semibold leading-tight">${name}</span>
-                    <span class="block text-xs mt-1">${
-                      def.volume || "?"
-                    } ml</span>
-                `;
+
+          const imageName = coffeeImageMapping[name];
+          let imageHtml = "";
+          if (imageName) {
+            // Construct the image source path directly
+            const imageSrc = `/static/images/${imageName}`;
+            // Image takes up a good portion of the top, object-contain ensures aspect ratio is maintained.
+            // Added rounded-md to image.
+            // Fallback placeholder from placehold.co
+            imageHtml = `
+                            <img src="${imageSrc}" alt="${name} coffee" 
+                                 class="w-full h-3/5 object-contain rounded-md mb-1" 
+                                 onerror="this.onerror=null; this.src='https://placehold.co/80x60/E2E8F0/4A5568?text=%E2%98%95%EF%B8%8F'; this.alt='Coffee cup icon';">
+                        `;
+          } else {
+            // Fallback if no image is mapped - could be a generic icon or text
+            imageHtml = `
+                            <div class="w-full h-3/5 flex justify-center items-center text-3xl text-gray-300">
+                                <span>☕</span>
+                            </div>`;
+          }
+
+          // Text container for name and volume, placed at the bottom.
+          // h-2/5 ensures it has space. flex flex-col justify-center to center text vertically in its box.
+          const textHtml = `
+                        <div class="h-2/5 flex flex-col justify-center items-center w-full">
+                            <span class="block font-semibold leading-tight text-xs">${name}</span>
+                            <span class="block text-[0.65rem] text-indigo-200 dark:text-indigo-300 mt-0.5">${
+                              def.volume || "?"
+                            } ml</span>
+                        </div>
+                    `;
+
+          button.innerHTML = imageHtml + textHtml;
           button.addEventListener("click", () => handleAddCoffeeSimple(name));
           simpleCoffeeButtonsContainer.appendChild(button);
         });
@@ -474,7 +512,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     const now = new Date();
-    // Format time as HH:MM AM/PM
     const coffeeTime = now.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
@@ -497,8 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
       showMessage(`${coffeeType} added for ${selectedDate}!`, "success");
-      await loadAndDisplaySimpleCoffeeCount(); // Refresh count in simple view
-      // If advanced view is active, it will get updated on next loadDailyLog or view switch
+      await loadAndDisplaySimpleCoffeeCount();
     } catch (error) {
       console.error("Error adding coffee (simple view):", error);
       showMessage(`Error: ${error.message}`, "error");
@@ -509,9 +545,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!simpleCoffeeCountSpan || !logDateInputSimple) return;
     let selectedDate = logDateInputSimple.value;
     if (!selectedDate) {
-      selectedDate = getFormattedDate(new Date()); // Fallback
+      selectedDate = getFormattedDate(new Date());
     }
-    updateSimpleSelectedDateDisplay(selectedDate); // Update display text
+    updateSimpleSelectedDateDisplay(selectedDate);
 
     try {
       const response = await fetch(`/api/coffees/${selectedDate}`);
@@ -542,7 +578,7 @@ document.addEventListener("DOMContentLoaded", () => {
       dateString = getFormattedDate(new Date());
     }
     try {
-      const displayDateObj = new Date(dateString + "T00:00:00"); // Parse as local
+      const displayDateObj = new Date(dateString + "T00:00:00");
       const displayDate = displayDateObj.toLocaleDateString(undefined, {
         year: "numeric",
         month: "long",
@@ -559,13 +595,13 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const loadDailyLog = async () => {
-    if (!logDateInput || !coffeeListUl) return; // Ensure elements for advanced view exist
+    if (!logDateInput || !coffeeListUl) return;
     let selectedDate = logDateInput.value;
     if (!selectedDate) {
       selectedDate = getFormattedDate(new Date());
       logDateInput.value = selectedDate;
     }
-    updateSelectedDateDisplays(selectedDate); // Update date displays for advanced view
+    updateSelectedDateDisplays(selectedDate);
 
     try {
       const response = await fetch(`/api/coffees/${selectedDate}`);
@@ -618,7 +654,7 @@ document.addEventListener("DOMContentLoaded", () => {
         coffeeListUl.appendChild(listItem);
 
         const definition = coffeeTypeDefinitions[coffee.type];
-        const cost = definition ? definition.cost : 0; // Use cost from definitions
+        const cost = definition ? definition.cost : 0;
         totalCost += cost;
         costsByType[coffee.type] = (costsByType[coffee.type] || 0) + cost;
         countsByType[coffee.type] = (countsByType[coffee.type] || 0) + 1;
@@ -646,7 +682,7 @@ document.addEventListener("DOMContentLoaded", () => {
       noCostBreakdownMsg.style.display = "block";
       noCostBreakdownMsg.textContent = "Cost data unavailable for these types.";
     } else {
-      noCostBreakdownMsg.style.display = "block"; // Ensure it's displayed if no coffees
+      noCostBreakdownMsg.style.display = "block";
       noCostBreakdownMsg.textContent = "No costs to display.";
     }
   };
@@ -682,12 +718,11 @@ document.addEventListener("DOMContentLoaded", () => {
         `${selectedCoffeeType} added for ${selectedDate}!`,
         "success"
       );
-      await loadDailyLog(); // Reload for advanced view
+      await loadDailyLog();
       if (viewModeToggle.checked) {
-        // If simple view is active, update its count too
         await loadAndDisplaySimpleCoffeeCount();
       }
-      coffeeTypeSelect.value = ""; // Reset dropdown
+      coffeeTypeSelect.value = "";
     } catch (error) {
       console.error("Error adding coffee:", error);
       showMessage(`Error adding coffee: ${error.message}`, "error");
@@ -715,9 +750,8 @@ document.addEventListener("DOMContentLoaded", () => {
           );
         }
         showMessage(`Log for ${selectedDate} cleared.`, "success");
-        await loadDailyLog(); // Reload for advanced view
+        await loadDailyLog();
         if (viewModeToggle.checked) {
-          // If simple view is active, update its count
           await loadAndDisplaySimpleCoffeeCount();
         }
       } catch (error) {
