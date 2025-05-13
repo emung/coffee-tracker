@@ -1,5 +1,10 @@
 // Contents of static/js/coffee_tracker.js
+// (Continuing from coffee_tracker_js_v3 with image buttons)
+
 document.addEventListener("DOMContentLoaded", () => {
+  // ... (all your existing DOM Element selections and variable declarations)
+  // (Keep the coffeeImageMapping and all other setup from previous versions)
+
   // DOM Elements - Daily Tracker (Advanced View)
   const logDateInput = document.getElementById("log-date");
   const yesterdayBtn = document.getElementById("yesterday-btn");
@@ -123,10 +128,9 @@ document.addEventListener("DOMContentLoaded", () => {
     "simple-selected-date-display"
   );
 
-  let dailyCoffees = []; // For advanced view's detailed log
-  let coffeeTypeDefinitions = {}; // Stores { name: { cost: X, volume: Y } }
+  let dailyCoffees = [];
+  let coffeeTypeDefinitions = {};
 
-  // Mapping for coffee images
   const coffeeImageMapping = {
     Arpeggio: "arpeggio.avif",
     "Buenos Aires": "buenos-aires.avif",
@@ -136,7 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
     Roma: "roma.avif",
     Vienna: "vienna.avif",
     "Volluto Decaf": "volluto-decaf.webp",
-    // Add other mappings here if new coffees with images are introduced
   };
 
   // --- Utility Functions ---
@@ -177,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       await fetchCoffeeDefinitions();
       populateReportSelects();
-      populateSimpleCoffeeButtons(); // This will now use the image mapping
+      populateSimpleCoffeeButtons();
     } catch (error) {
       console.error("Initialization error:", error);
       showMessage("Error initializing page data.", "error");
@@ -434,23 +437,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  /**
-   * Populates the simple coffee buttons container with quadratic buttons
-   * that include an image and text (name, volume).
-   */
   const populateSimpleCoffeeButtons = () => {
     if (!simpleCoffeeButtonsContainer) return;
-    simpleCoffeeButtonsContainer.innerHTML = ""; // Clear existing buttons
+    simpleCoffeeButtonsContainer.innerHTML = "";
 
     if (Object.keys(coffeeTypeDefinitions).length > 0) {
-      // Sort coffee types alphabetically by name for consistent order
       Object.entries(coffeeTypeDefinitions)
         .sort((a, b) => a[0].localeCompare(b[0]))
         .forEach(([name, def]) => {
           const button = document.createElement("button");
-          // Tailwind classes for a quadratic button with flex column layout
-          // p-2 for padding inside the button.
-          // justify-between to push image to top and text to bottom within the flex container.
           button.className = `
                         simple-coffee-btn 
                         bg-indigo-500 hover:bg-indigo-600 
@@ -460,32 +455,25 @@ document.addEventListener("DOMContentLoaded", () => {
                         flex flex-col justify-between items-center 
                         text-center shadow-md transition-colors 
                         focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 
-                        overflow-hidden`; // Added overflow-hidden
+                        overflow-hidden`;
           button.dataset.coffeeType = name;
 
           const imageName = coffeeImageMapping[name];
           let imageHtml = "";
           if (imageName) {
-            // Construct the image source path directly
             const imageSrc = `/static/images/${imageName}`;
-            // Image takes up a good portion of the top, object-contain ensures aspect ratio is maintained.
-            // Added rounded-md to image.
-            // Fallback placeholder from placehold.co
             imageHtml = `
                             <img src="${imageSrc}" alt="${name} coffee" 
                                  class="w-full h-3/5 object-contain rounded-md mb-1" 
                                  onerror="this.onerror=null; this.src='https://placehold.co/80x60/E2E8F0/4A5568?text=%E2%98%95%EF%B8%8F'; this.alt='Coffee cup icon';">
                         `;
           } else {
-            // Fallback if no image is mapped - could be a generic icon or text
             imageHtml = `
                             <div class="w-full h-3/5 flex justify-center items-center text-3xl text-gray-300">
                                 <span>☕</span>
                             </div>`;
           }
 
-          // Text container for name and volume, placed at the bottom.
-          // h-2/5 ensures it has space. flex flex-col justify-center to center text vertically in its box.
           const textHtml = `
                         <div class="h-2/5 flex flex-col justify-center items-center w-full">
                             <span class="block font-semibold leading-tight text-xs">${name}</span>
@@ -611,7 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
           `Failed to load log: ${response.status}. ${errorData.error || ""}`
         );
       }
-      dailyCoffees = await response.json();
+      dailyCoffees = await response.json(); // This now includes the 'id' for each entry
     } catch (error) {
       console.error("Error loading daily log:", error);
       showMessage(
@@ -623,6 +611,10 @@ document.addEventListener("DOMContentLoaded", () => {
     renderDailyLogAndCosts();
   };
 
+  /**
+   * Renders the list of coffee entries for the day in the Advanced View,
+   * including a delete button for each entry.
+   */
   const renderDailyLogAndCosts = () => {
     if (
       !coffeeListUl ||
@@ -634,7 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
     )
       return;
 
-    coffeeListUl.innerHTML = "";
+    coffeeListUl.innerHTML = ""; // Clear existing list
     let totalCost = 0;
     const costsByType = {};
     const countsByType = {};
@@ -650,7 +642,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const listItem = document.createElement("li");
         listItem.className =
           "coffee-item bg-white dark:bg-gray-700 p-2.5 rounded-md shadow-sm border border-gray-200 dark:border-gray-600 flex justify-between items-center text-sm text-gray-800 dark:text-gray-100";
-        listItem.textContent = `${coffee.type} (at ${coffee.time})`;
+
+        // Span for coffee text
+        const textSpan = document.createElement("span");
+        textSpan.textContent = `${coffee.type} (at ${coffee.time})`;
+
+        // Delete button for the coffee entry
+        const deleteBtn = document.createElement("button");
+        deleteBtn.innerHTML = "&times;"; // Simple 'x' icon
+        deleteBtn.className =
+          "ml-2 px-2 py-0.5 text-xs bg-red-500 hover:bg-red-600 text-white font-semibold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-400 dark:focus:ring-red-500";
+        deleteBtn.title = "Delete this entry";
+        deleteBtn.dataset.entryId = coffee.id; // Store entry ID
+        deleteBtn.addEventListener("click", (event) => {
+          event.stopPropagation(); // Prevent any parent event listeners from firing
+          handleDeleteCoffeeEntry(coffee.id, coffee.type);
+        });
+
+        listItem.appendChild(textSpan);
+        listItem.appendChild(deleteBtn);
         coffeeListUl.appendChild(listItem);
 
         const definition = coffeeTypeDefinitions[coffee.type];
@@ -684,6 +694,48 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       noCostBreakdownMsg.style.display = "block";
       noCostBreakdownMsg.textContent = "No costs to display.";
+    }
+  };
+
+  /**
+   * Handles the deletion of a single coffee entry.
+   * @param {number} entryId - The ID of the coffee entry to delete.
+   * @param {string} coffeeType - The type of coffee, for the confirmation message.
+   */
+  const handleDeleteCoffeeEntry = async (entryId, coffeeType) => {
+    if (!entryId) {
+      showMessage("Error: Entry ID is missing.", "error");
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete this ${coffeeType} entry?`)) {
+      try {
+        const response = await fetch(`/api/coffee_entry/${entryId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({})); // Try to get error message
+          throw new Error(
+            `Failed to delete entry: ${response.status}. ${
+              errorData.error || "Server error"
+            }`
+          );
+        }
+
+        const result = await response.json();
+        showMessage(
+          result.message || `${coffeeType} entry deleted successfully!`,
+          "success"
+        );
+
+        // Refresh data in both views
+        await loadDailyLog(); // Reloads advanced view log and costs
+        await loadAndDisplaySimpleCoffeeCount(); // Updates simple view count
+      } catch (error) {
+        console.error("Error deleting coffee entry:", error);
+        showMessage(`Error: ${error.message}`, "error");
+      }
     }
   };
 

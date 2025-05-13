@@ -93,7 +93,7 @@ def login():
             flash('An unexpected error occurred. Please try again.', 'danger')
         finally:
             if conn: conn.close()
-    return render_template('login.html')
+    return render_template('login.html') # Ensure you have a login.html template
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -103,14 +103,13 @@ def register():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
-        # Basic validation
         if not username or not password or not confirm_password:
             flash('All fields are required.', 'danger')
-            return render_template('register.html')
+            return render_template('register.html') # Ensure you have a register.html
         if password != confirm_password:
             flash('Passwords do not match.', 'danger')
             return render_template('register.html')
-        if len(password) < 6: # Example: minimum password length
+        if len(password) < 6: 
             flash('Password must be at least 6 characters long.', 'danger')
             return render_template('register.html')
 
@@ -119,17 +118,14 @@ def register():
             conn = get_db_connection()
             cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
             
-            # Check if username already exists
             cur.execute("SELECT id FROM users WHERE username = %s", (username,))
             if cur.fetchone():
                 flash('Username already exists. Please choose a different one.', 'warning')
                 cur.close()
                 return render_template('register.html')
             
-            # Hash the password
             password_hash = generate_password_hash(password)
             
-            # Insert new user
             cur.execute(
                 "INSERT INTO users (username, password_hash) VALUES (%s, %s)",
                 (username, password_hash)
@@ -151,7 +147,7 @@ def register():
         finally:
             if conn: conn.close()
             
-    return render_template('register.html')
+    return render_template('register.html') # Ensure you have a register.html template
 
 
 @app.route('/logout')
@@ -166,19 +162,20 @@ def logout():
 @app.route("/")
 @login_required
 def index():
+    # Redirect to coffee_tracker_page or a dashboard if you have one
     return redirect(url_for('coffee_tracker_page'))
 
 @app.route("/coffee")
 @login_required
 def coffee_tracker_page():
+    # Pass the username to the template
     return render_template("coffee_tracker.html", username=session.get('logged_in_user'))
 
 # --- API Routes (Protected) ---
-# (Keep all your existing API routes here, they remain unchanged for this feature)
-# ... get_coffee_types, get_coffees_for_date, add_coffee_for_date, etc. ...
 @app.route("/api/coffee-types", methods=['GET'])
 @login_required 
 def get_coffee_types():
+    """Returns a list of available coffee types with their costs and volumes."""
     types_list = [{"name": name, "cost": cost, "volume": COFFEE_VOLUMES.get(name, 0)}
                   for name, cost in COFFEE_COSTS.items()]
     return jsonify(types_list)
@@ -186,8 +183,12 @@ def get_coffee_types():
 @app.route("/api/coffees/<date_string>", methods=['GET'])
 @login_required 
 def get_coffees_for_date(date_string):
-    try: entry_date = datetime.strptime(date_string, '%Y-%m-%d').date()
-    except ValueError: return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+    """Gets all coffee entries for a specific user and date."""
+    try:
+        entry_date = datetime.strptime(date_string, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+    
     user_id = session.get('user_id')
     coffees_for_date = []
     conn = None
@@ -205,12 +206,13 @@ def get_coffees_for_date(date_string):
             coffees_for_date.append({
                 "id": row["id"], 
                 "type": row["coffee_type"],
+                # Format time to HH:MM AM/PM, removing leading zero from hour
                 "time": row["entry_time"].strftime('%I:%M %p').lstrip('0'), 
-                "cost": float(row["cost"]) 
+                "cost": float(row["cost"]) # Ensure cost is float
             })
     except psycopg2.Error as e:
-        logging.error(f"DB error fetching coffees for date {date_string}: {e}")
-        return jsonify({"error": "Database error"}), 500
+        logging.error(f"DB error fetching coffees for date {date_string} for user {user_id}: {e}")
+        return jsonify({"error": "Database error while fetching coffee entries"}), 500
     finally:
         if conn: conn.close()
     return jsonify(coffees_for_date)
@@ -218,21 +220,32 @@ def get_coffees_for_date(date_string):
 @app.route("/api/coffees/<date_string>", methods=['POST'])
 @login_required 
 def add_coffee_for_date(date_string):
-    try: entry_date = datetime.strptime(date_string, '%Y-%m-%d').date()
-    except ValueError: return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+    """Adds a new coffee entry for the logged-in user for a specific date."""
+    try:
+        entry_date = datetime.strptime(date_string, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+    
     user_id = session.get('user_id')
     data = request.get_json()
+
     if not data or 'type' not in data or 'time' not in data:
         return jsonify({"error": "Missing 'type' or 'time' in request."}), 400
+
     coffee_type = data['type']
-    entry_time_str = data['time'] 
+    entry_time_str = data['time'] # Expecting time like "09:30 AM"
+    
     if coffee_type not in COFFEE_COSTS:
         return jsonify({"error": f"Unknown coffee type: {coffee_type}"}), 400
+    
     cost = COFFEE_COSTS[coffee_type]
+
     try:
+        # Parse time string (e.g., "09:30 AM") into a time object
         entry_time_obj = datetime.strptime(entry_time_str, '%I:%M %p').time()
     except ValueError:
         return jsonify({"error": "Invalid time format. Use HH:MM AM/PM."}), 400
+
     conn = None
     new_entry_id = None
     try:
@@ -246,11 +259,11 @@ def add_coffee_for_date(date_string):
         new_entry_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
-        logging.info(f"User {user_id} added coffee: {coffee_type} on {date_string} at {entry_time_str}, cost {cost}")
+        logging.info(f"User {user_id} added coffee: {coffee_type} on {date_string} at {entry_time_str}, cost {cost}, ID: {new_entry_id}")
         return jsonify({"id": new_entry_id, "type": coffee_type, "time": entry_time_str, "cost": cost}), 201
     except psycopg2.Error as e:
         if conn: conn.rollback()
-        logging.error(f"DB error adding coffee: {e}")
+        logging.error(f"DB error adding coffee for user {user_id}: {e}")
         return jsonify({"error": "Database error while adding coffee"}), 500
     finally:
         if conn: conn.close()
@@ -258,8 +271,12 @@ def add_coffee_for_date(date_string):
 @app.route("/api/coffees/<date_string>", methods=['DELETE'])
 @login_required 
 def clear_coffees_for_date(date_string):
-    try: entry_date = datetime.strptime(date_string, '%Y-%m-%d').date()
-    except ValueError: return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+    """Clears all coffee entries for the logged-in user for a specific date."""
+    try:
+        entry_date = datetime.strptime(date_string, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+    
     user_id = session.get('user_id')
     conn = None
     try:
@@ -276,11 +293,45 @@ def clear_coffees_for_date(date_string):
         return jsonify({"message": f"Coffees for {date_string} cleared successfully.", "deleted_count": rows_deleted}), 200
     except psycopg2.Error as e:
         if conn: conn.rollback()
-        logging.error(f"DB error clearing coffees: {e}")
+        logging.error(f"DB error clearing coffees for user {user_id}: {e}")
         return jsonify({"error": "Database error while clearing coffees"}), 500
     finally:
         if conn: conn.close()
 
+# --- NEW ENDPOINT FOR DELETING A SINGLE COFFEE ENTRY ---
+@app.route("/api/coffee_entry/<int:entry_id>", methods=['DELETE'])
+@login_required
+def delete_coffee_entry(entry_id):
+    """Deletes a specific coffee entry by its ID for the logged-in user."""
+    user_id = session.get('user_id')
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Ensure the entry belongs to the current user before deleting
+        cur.execute(
+            "DELETE FROM coffee_entries WHERE id = %s AND user_id = %s",
+            (entry_id, user_id)
+        )
+        conn.commit()
+        rows_deleted = cur.rowcount
+        cur.close()
+
+        if rows_deleted == 0:
+            # Either entry didn't exist or didn't belong to the user
+            logging.warning(f"User {user_id} attempt to delete non-existent or unauthorized entry ID {entry_id}.")
+            return jsonify({"error": "Entry not found or not authorized to delete."}), 404
+        
+        logging.info(f"User {user_id} deleted coffee entry ID {entry_id}.")
+        return jsonify({"message": f"Coffee entry {entry_id} deleted successfully.", "deleted_id": entry_id}), 200
+    except psycopg2.Error as e:
+        if conn: conn.rollback()
+        logging.error(f"DB error deleting coffee entry ID {entry_id} for user {user_id}: {e}")
+        return jsonify({"error": "Database error while deleting coffee entry"}), 500
+    finally:
+        if conn: conn.close()
+
+# --- Report Routes ---
 @app.route("/api/reports/monthly", methods=['GET'])
 @login_required 
 def get_monthly_report():
@@ -289,44 +340,60 @@ def get_monthly_report():
         year = int(request.args.get('year'))
         month = int(request.args.get('month'))
     except (TypeError, ValueError): return jsonify({"error": "Year/month required as integers."}), 400
-    if not (1 <= month <= 12 and 2000 <= year <= date.today().year + 5):
+    if not (1 <= month <= 12 and 2000 <= year <= date.today().year + 5): # Allow a few future years
         return jsonify({"error": "Invalid year or month."}), 400
+    
     type_filter = request.args.get('type', 'All')
     if type_filter != 'All' and type_filter not in COFFEE_COSTS:
         return jsonify({"error": f"Invalid coffee type: {type_filter}"}), 400
+
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
         sql_query = """
             SELECT coffee_type, COUNT(*) as count, SUM(cost) as total_cost
             FROM coffee_entries
             WHERE user_id = %s AND EXTRACT(YEAR FROM entry_date) = %s AND EXTRACT(MONTH FROM entry_date) = %s
         """
         params = [user_id, year, month]
+
         if type_filter != 'All':
             sql_query += " AND coffee_type = %s"
             params.append(type_filter)
+        
         sql_query += " GROUP BY coffee_type ORDER BY coffee_type;"
         cur.execute(sql_query, tuple(params))
         rows = cur.fetchall()
-        overall_total_coffees = 0; overall_total_cost = 0.0; breakdown = {}
+        
+        overall_total_coffees = 0
+        overall_total_cost = 0.0
+        breakdown = {}
+
         if type_filter == 'All':
             for row in rows:
                 breakdown[row['coffee_type']] = {"count": row['count'], "cost": float(row['total_cost'])}
                 overall_total_coffees += row['count']
                 overall_total_cost += float(row['total_cost'])
         elif rows: # Specific type filter and data found
-            row = rows[0]
+            row = rows[0] # Should only be one row if filtered by type and grouped by type
             overall_total_coffees = row['count']
             overall_total_cost = float(row['total_cost'])
+            # No breakdown needed if filtering by a specific type, totals are for that type
+        
         cur.close()
-        report = {"year": year, "month": month, "coffee_type_filter": type_filter,
-                  "total_coffees": overall_total_coffees, "total_cost": round(overall_total_cost, 2),
-                  "breakdown_by_type": breakdown if type_filter == 'All' else {}}
+        report = {
+            "year": year, 
+            "month": month, 
+            "coffee_type_filter": type_filter,
+            "total_coffees": overall_total_coffees, 
+            "total_cost": round(overall_total_cost, 2),
+            "breakdown_by_type": breakdown if type_filter == 'All' else {} # Only show breakdown if 'All' types
+        }
         return jsonify(report)
     except psycopg2.Error as e:
-        logging.error(f"DB error generating monthly report: {e}")
+        logging.error(f"DB error generating monthly report for user {user_id}: {e}")
         return jsonify({"error": "Database error"}), 500
     finally:
         if conn: conn.close()
@@ -335,29 +402,41 @@ def get_monthly_report():
 @login_required 
 def get_yearly_report():
     user_id = session.get('user_id')
-    try: year = int(request.args.get('year'))
-    except (TypeError, ValueError): return jsonify({"error": "Year required as integer."}), 400
-    if not (2000 <= year <= date.today().year + 5): return jsonify({"error": "Invalid year."}), 400
+    try:
+        year = int(request.args.get('year'))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Year required as integer."}), 400
+    if not (2000 <= year <= date.today().year + 5): # Allow a few future years
+        return jsonify({"error": "Invalid year."}), 400
+    
     type_filter = request.args.get('type', 'All')
     if type_filter != 'All' and type_filter not in COFFEE_COSTS:
         return jsonify({"error": f"Invalid coffee type: {type_filter}"}), 400
+
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
         sql_query = """
             SELECT coffee_type, COUNT(*) as count, SUM(cost) as total_cost
             FROM coffee_entries
             WHERE user_id = %s AND EXTRACT(YEAR FROM entry_date) = %s
         """
         params = [user_id, year]
+
         if type_filter != 'All':
             sql_query += " AND coffee_type = %s"
             params.append(type_filter)
+            
         sql_query += " GROUP BY coffee_type ORDER BY coffee_type;"
         cur.execute(sql_query, tuple(params))
         rows = cur.fetchall()
-        overall_total_coffees = 0; overall_total_cost = 0.0; breakdown = {}
+        
+        overall_total_coffees = 0
+        overall_total_cost = 0.0
+        breakdown = {}
+
         if type_filter == 'All':
             for row in rows:
                 breakdown[row['coffee_type']] = {"count": row['count'], "cost": float(row['total_cost'])}
@@ -367,13 +446,19 @@ def get_yearly_report():
             row = rows[0]
             overall_total_coffees = row['count']
             overall_total_cost = float(row['total_cost'])
+            # No breakdown needed if filtering by a specific type
+
         cur.close()
-        report = {"year": year, "coffee_type_filter": type_filter,
-                  "total_coffees": overall_total_coffees, "total_cost": round(overall_total_cost, 2),
-                  "breakdown_by_type": breakdown if type_filter == 'All' else {}}
+        report = {
+            "year": year, 
+            "coffee_type_filter": type_filter,
+            "total_coffees": overall_total_coffees, 
+            "total_cost": round(overall_total_cost, 2),
+            "breakdown_by_type": breakdown if type_filter == 'All' else {}
+        }
         return jsonify(report)
     except psycopg2.Error as e:
-        logging.error(f"DB error generating yearly report: {e}")
+        logging.error(f"DB error generating yearly report for user {user_id}: {e}")
         return jsonify({"error": "Database error"}), 500
     finally:
         if conn: conn.close()
@@ -382,9 +467,13 @@ def get_yearly_report():
 @login_required 
 def get_yearly_volume():
     user_id = session.get('user_id')
-    try: year = int(request.args.get('year'))
-    except (TypeError, ValueError): return jsonify({"error": "Year required as integer."}), 400
-    if not (2000 <= year <= date.today().year + 5): return jsonify({"error": "Invalid year."}), 400
+    try:
+        year = int(request.args.get('year'))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Year required as integer."}), 400
+    if not (2000 <= year <= date.today().year + 5): # Allow a few future years
+        return jsonify({"error": "Invalid year."}), 400
+    
     total_volume_ml = 0
     conn = None
     try:
@@ -403,11 +492,13 @@ def get_yearly_volume():
                 total_volume_ml += COFFEE_VOLUMES[row['coffee_type']] * row['count']
         return jsonify({"year": year, "total_volume_ml": total_volume_ml})
     except psycopg2.Error as e:
-        logging.error(f"DB error getting yearly volume: {e}")
+        logging.error(f"DB error getting yearly volume for user {user_id}: {e}")
         return jsonify({"error": "Database error"}), 500
     finally:
         if conn: conn.close()
 
 
 if __name__ == "__main__":
+    # For development, ensure debug is True. For production, set to False.
+    # Host '0.0.0.0' makes it accessible externally if needed, otherwise '127.0.0.1' for local only.
     app.run(host='0.0.0.0', port=5000, debug=True)
