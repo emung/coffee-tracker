@@ -1,0 +1,53 @@
+    /* Styles specific to coffee_tracker.html */
+
+    /* Focus rings are handled by Tailwind classes directly in HTML for :focus states,
+       but if you were to remove Tailwind for these, you'd add them here.
+       Example:
+       .input-group input:focus, .input-group select:focus, ... {
+           outline: none;
+           box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+       }
+    */
+
+    .coffee-item,
+    .cost-item,
+    .report-breakdown-item {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .coffee-item:hover,
+    .cost-item:hover,
+    .report-breakdown-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.07); /* Tailwind shadow-md on hover */
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #e5e7eb; /* Tailwind bg-gray-200 */
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #9ca3af; /* Tailwind bg-gray-400 */
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #6b7280; /* Tailwind bg-gray-500 */
+    }
+
+    input[type="date"] {
+        min-width: 150px;
+    }
+
+    .date-quick-select button {
+        /* Tailwind py-2 px-3 text-sm equivalent with slight padding adjustment for alignment */
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        padding-top: 0.6rem;  /* Adjusted for better vertical alignment with date input */
+        padding-bottom: 0.6rem; /* Adjusted for better vertical alignment with date input */
+        font-size: 0.875rem; /* text-sm */
+        /* Other styles like bg-gray-200, hover:bg-gray-300, etc., are applied via Tailwind in HTML */
+    }
+    

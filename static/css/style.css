@@ -1,0 +1,91 @@
+    /* Import Google Font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    /* Apply the font and base background to all pages */
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f3f4f6; /* Tailwind bg-gray-100 equivalent */
+        margin: 0; /* Good practice to reset default margin */
+        display: flex; /* Used in some body tags, good to have a default if needed */
+        flex-direction: column; /* Used in some body tags */
+        align-items: center; /* Used in some body tags */
+        min-height: 100vh; /* Ensure footer (if any) stays down */
+        padding: 1rem; /* Default padding for body */
+    }
+
+    /* Focus Rings - applied via JS or directly if not using Tailwind's focus variants */
+    .focused-ring { /* You might need to add/remove this class with JS if not using Tailwind's :focus variants */
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5); /* Tailwind focus:ring-blue-400 equivalent */
+    }
+
+    /* Alert Styles (from login.html) */
+    .alert {
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+        border-radius: 0.375rem;
+        font-size: 0.875rem; /* text-sm */
+    }
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+    .alert-success {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+    }
+    .alert-warning {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+    }
+    .alert-info {
+        color: #0c5460;
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+    }
+
+    /* Message Box (from coffee_tracker.html) */
+    .message-box {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500; /* font-medium */
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease, top 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* shadow-lg */
+    }
+    .message-box.success {
+        background-color: #10b981; /* Tailwind bg-green-500 */
+    }
+    .message-box.error {
+        background-color: #ef4444; /* Tailwind bg-red-500 */
+    }
+    .message-box.show {
+        opacity: 1;
+        top: 40px;
+    }
+
+    /* Section divider (from coffee_tracker.html) */
+    .section-divider {
+        border-top: 1px solid #d1d5db; /* Tailwind border-gray-300 */
+        margin-top: 2rem;    /* Tailwind my-8 */
+        margin-bottom: 2rem;
+    }
+
+    /* General body flex for login/register pages */
+    body.auth-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+    
