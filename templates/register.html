@@ -4,20 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Coffee Tracker</title>
+    <title>Register - Coffee Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Correctly import Google Font */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        /* Apply the font and base background */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
             /* Tailwind bg-gray-100 */
         }
 
-        /* Styles for Flash Messages (these are correct) */
         .alert {
             padding: 0.75rem 1.25rem;
             margin-bottom: 1rem;
@@ -53,7 +50,7 @@
 
 <body class="flex items-center justify-center min-h-screen">
     <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm">
-        <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Coffee Tracker Login</h1>
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Create Account</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -65,26 +62,34 @@
         {% endif %}
         {% endwith %}
 
-        <form method="POST" action="{{ url_for('login', next=request.args.get('next')) }}">
+        <form method="POST" action="{{ url_for('register') }}">
             <div class="mb-4">
                 <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
                 <input type="text" id="username" name="username" required
+                    class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    value="{{ request.form.username }}"> {# Keep value on error #}
+            </div>
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password (min. 6
+                    characters)</label>
+                <input type="password" id="password" name="password" required
                     class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
             </div>
             <div class="mb-6">
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" id="password" name="password" required
+                <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">Confirm
+                    Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required
                     class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
             </div>
             <button type="submit"
                 class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1">
-                Log In
+                Register
             </button>
         </form>
         <p class="text-center text-sm text-gray-600 mt-6">
-            Don't have an account?
-            <a href="{{ url_for('register') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
-                Register here
+            Already have an account?
+            <a href="{{ url_for('login') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                Log in here
             </a>
         </p>
     </div>
