@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
       dailyCoffees.forEach((coffee) => {
         const listItem = document.createElement("li");
         listItem.className =
-          "coffee-item bg-white p-2.5 rounded-md shadow-sm border border-gray-200 flex justify-between items-center text-sm";
+          "coffee-item p-2.5 rounded-md shadow-sm border border-gray-200 flex justify-between items-center text-sm";
         listItem.textContent = `${coffee.type} (at ${coffee.time})`;
         coffeeListUl.appendChild(listItem);
 
@@ -344,7 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const count = countsByType[type] || 0;
           const costItem = document.createElement("li");
           costItem.className =
-            "cost-item flex justify-between items-center text-sm p-1.5 bg-white rounded";
+            "cost-item flex justify-between items-center text-sm p-1.5 bg-grey rounded";
           costItem.innerHTML = `<span>${type} (x${count}):</span> <span class="font-medium">€${costsByType[
             type
           ].toFixed(2)}</span>`;
@@ -439,7 +439,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const details = breakdownData[typeName];
       const listItem = document.createElement("li");
       listItem.className =
-        "report-breakdown-item flex justify-between items-center text-sm p-1.5 bg-white rounded shadow-sm";
+        "report-breakdown-item flex justify-between items-center text-sm p-1.5 rounded shadow-sm";
       listItem.innerHTML = `
                     <span>${typeName} (x${details.count}):</span>
                     <span class="font-medium">€${details.cost.toFixed(2)}</span>

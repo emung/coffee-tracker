@@ -1,34 +1,27 @@
-/* Styles specific to coffee_tracker.html using CSS Variables */
+/* Styles specific to coffee_tracker.html */
 
 .coffee-item,
 .cost-item,
 .report-breakdown-item {
+    background: #6d7989;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.3s ease, border-color 0.3s ease;
-    /* Default light mode, Tailwind classes in HTML will also apply */
+    /* Tailwind classes like dark:bg-gray-700 will apply due to <html class="dark"> */
 }
 
-/* Custom scrollbar (less affected by theme, but track can be themed) */
 .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: var(--border-color-light); /* Use variable */
+    background: var(--border-color-light); /* Uses dark theme variable */
     border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #9ca3af; /* Tailwind gray-400 - might need dark variant if too light */
+    background: #6d7989; /* Tailwind gray-600 */
     border-radius: 10px;
 }
-html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #4b5563; /* Tailwind gray-600 */
-}
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #6b7280; /* Tailwind gray-500 */
-}
-html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #374151; /* Tailwind gray-700 */
 }
-
 
 input[type="date"] {
     min-width: 150px;
@@ -40,18 +33,6 @@ input[type="date"] {
     padding-top: 0.6rem;
     padding-bottom: 0.6rem;
     font-size: 0.875rem;
-    /* Tailwind classes in HTML handle bg, hover, text color.
-       We can add dark mode overrides here if Tailwind's dark: prefixes aren't enough.
-       Example:
-       background-color: #e5e7eb; // bg-gray-200
-       color: #374151; // text-gray-700
-    */
+    /* Tailwind classes in HTML handle bg, hover, text color,
+       and their dark: variants will apply due to <html class="dark"> */
 }
-
-/* Example of how you might override a Tailwind-styled element if needed,
-   though using Tailwind's dark: prefix in HTML is often cleaner.
-html.dark .some-tailwind-styled-element {
-    background-color: var(--some-dark-bg-variable);
-    color: var(--some-dark-text-variable);
-}
-*/
