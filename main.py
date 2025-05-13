@@ -1,5 +1,5 @@
 def main():
-    print("Hello from first-flask-app!")
+    print("Hello from coffee-tracker!")
 
 
 if __name__ == "__main__":
