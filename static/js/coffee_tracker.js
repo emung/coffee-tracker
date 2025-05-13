@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const logDateInput = document.getElementById("log-date");
   const yesterdayBtn = document.getElementById("yesterday-btn");
   const todayBtn = document.getElementById("today-btn");
+  const prevDayBtn = document.getElementById("prev-day-btn"); // New
+  const nextDayBtn = document.getElementById("next-day-btn"); // New
   const coffeeTypeSelect = document.getElementById("coffee-type-select");
   const addCoffeeBtn = document.getElementById("add-coffee-btn");
   const coffeeListUl = document.getElementById("coffee-list");
@@ -27,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "selected-date-display-clear"
   );
 
+  // ... (rest of your existing DOM element selections for reports and fun facts) ...
   // DOM Elements - Monthly Report
   const reportYearMonthlyInput = document.getElementById("report-year-monthly");
   const reportMonthSelect = document.getElementById("report-month");
@@ -105,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const noFunFactDataMsg = document.getElementById("no-fun-fact-data-msg");
 
   let dailyCoffees = [];
-  let coffeeTypeDefinitions = {}; // Stores {name: {cost: X, volume: Y}}
+  let coffeeTypeDefinitions = {};
 
   // --- Utility Functions ---
   const getFormattedDate = (dateObj) => {
@@ -140,12 +143,42 @@ document.addEventListener("DOMContentLoaded", () => {
       updateSelectedDateDisplays(logDateInput.value);
       loadDailyLog();
     });
-    todayBtn.addEventListener("click", () => setDateAndReload(new Date()));
+
+    // Helper function for date navigation buttons
+    const navigateDate = (daysToChange) => {
+      const currentDateStr = logDateInput.value;
+      if (!currentDateStr) return; // Should not happen if initialized correctly
+
+      // HTML date input returns YYYY-MM-DD. Need to parse carefully for timezone.
+      // To avoid timezone issues, parse as UTC then work with UTC dates for manipulation.
+      const parts = currentDateStr.split("-");
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+      const day = parseInt(parts[2], 10);
+
+      const currentDate = new Date(Date.UTC(year, month, day));
+      currentDate.setUTCDate(currentDate.getUTCDate() + daysToChange);
+
+      logDateInput.value = getFormattedDate(currentDate); // getFormattedDate already handles UTC to YYYY-MM-DD
+      logDateInput.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+
+    todayBtn.addEventListener("click", () => setDateAndReload(new Date())); // Existing
     yesterdayBtn.addEventListener("click", () => {
+      // Existing
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       setDateAndReload(yesterday);
     });
+
+    // New event listeners for previous and next day buttons
+    if (prevDayBtn) {
+      prevDayBtn.addEventListener("click", () => navigateDate(-1));
+    }
+    if (nextDayBtn) {
+      nextDayBtn.addEventListener("click", () => navigateDate(1));
+    }
+
     addCoffeeBtn.addEventListener("click", handleAddCoffee);
     clearDayBtn.addEventListener("click", handleClearDay);
     generateMonthlyReportBtn.addEventListener(
@@ -160,9 +193,14 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const setDateAndReload = (dateObj) => {
-    logDateInput.value = getFormattedDate(dateObj);
+    // This function is used by Yesterday/Today which use local time.
+    // For consistency, ensure it also sets the date input correctly then dispatches change.
+    logDateInput.value = getFormattedDate(dateObj); // getFormattedDate works with local Date objects
     logDateInput.dispatchEvent(new Event("change", { bubbles: true }));
   };
+
+  // ... (rest of your existing JavaScript: updateSelectedDateDisplays, fetchCoffeeDefinitions, etc.)
+  // Ensure all the functions below this point are the same as your current working version.
 
   const updateSelectedDateDisplays = (dateString) => {
     if (!dateString) {
@@ -231,9 +269,8 @@ document.addEventListener("DOMContentLoaded", () => {
           reportCoffeeTypeYearlySelect.appendChild(yearlyOption);
         });
     } else {
-      console.warn(
-        "Coffee definitions not yet loaded for populating report selects."
-      );
+      // This might be called before fetchCoffeeDefinitions completes if not careful with async/await
+      // console.warn("Coffee definitions not yet loaded for populating report selects.");
     }
   };
 
@@ -320,8 +357,9 @@ document.addEventListener("DOMContentLoaded", () => {
       noCostBreakdownMsg.style.display = "none";
       dailyCoffees.forEach((coffee) => {
         const listItem = document.createElement("li");
+        // Added dark mode classes for list items directly here for simplicity
         listItem.className =
-          "coffee-item p-2.5 rounded-md shadow-sm border border-gray-200 flex justify-between items-center text-sm";
+          "coffee-item bg-white dark:bg-gray-700 p-2.5 rounded-md shadow-sm border border-gray-200 dark:border-gray-600 flex justify-between items-center text-sm text-gray-800 dark:text-gray-100";
         listItem.textContent = `${coffee.type} (at ${coffee.time})`;
         coffeeListUl.appendChild(listItem);
 
@@ -343,8 +381,9 @@ document.addEventListener("DOMContentLoaded", () => {
         .forEach((type) => {
           const count = countsByType[type] || 0;
           const costItem = document.createElement("li");
+          // Added dark mode classes for list items directly here
           costItem.className =
-            "cost-item flex justify-between items-center text-sm p-1.5 bg-grey rounded";
+            "cost-item flex justify-between items-center text-sm p-1.5 bg-white dark:bg-gray-700 rounded text-gray-800 dark:text-gray-100";
           costItem.innerHTML = `<span>${type} (x${count}):</span> <span class="font-medium">€${costsByType[
             type
           ].toFixed(2)}</span>`;
@@ -424,13 +463,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // --- Report Rendering Helper ---
   const renderReportBreakdown = (listElement, breakdownData) => {
     listElement.innerHTML = "";
     if (!breakdownData || Object.keys(breakdownData).length === 0) {
       const noBreakdownItem = document.createElement("li");
       noBreakdownItem.textContent = "No specific type data for this selection.";
-      noBreakdownItem.className = "italic text-gray-500 text-sm";
+      noBreakdownItem.className =
+        "italic text-gray-500 dark:text-gray-400 text-sm";
       listElement.appendChild(noBreakdownItem);
       return;
     }
@@ -438,17 +477,17 @@ document.addEventListener("DOMContentLoaded", () => {
     for (const typeName of sortedTypes) {
       const details = breakdownData[typeName];
       const listItem = document.createElement("li");
+      // Added dark mode classes for list items directly here
       listItem.className =
-        "report-breakdown-item flex justify-between items-center text-sm p-1.5 rounded shadow-sm";
+        "report-breakdown-item flex justify-between items-center text-sm p-1.5 bg-white dark:bg-gray-700 rounded shadow-sm text-gray-800 dark:text-gray-100";
       listItem.innerHTML = `
-                    <span>${typeName} (x${details.count}):</span>
-                    <span class="font-medium">€${details.cost.toFixed(2)}</span>
-                `;
+                <span>${typeName} (x${details.count}):</span>
+                <span class="font-medium">€${details.cost.toFixed(2)}</span>
+            `;
       listElement.appendChild(listItem);
     }
   };
 
-  // --- Monthly Report Functions ---
   const handleGenerateMonthlyReport = async () => {
     const year = reportYearMonthlyInput.value;
     const month = reportMonthSelect.value;
@@ -520,7 +559,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // --- Yearly Report Functions ---
   const handleGenerateYearlyReport = async () => {
     const year = reportYearYearlyInput.value;
     const typeFilter = reportCoffeeTypeYearlySelect.value;
@@ -586,7 +624,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // --- Fun Fact Function ---
   const handleShowFunFact = async () => {
     const year = funFactYearInput.value;
     if (!year) {
@@ -618,7 +655,6 @@ document.addEventListener("DOMContentLoaded", () => {
       noFunFactDataMsg.textContent = "Could not load fun fact.";
     }
   };
-
   // --- Start the page ---
   initializePage();
 });
