@@ -8,226 +8,285 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/coffee_tracker.css') }}">
+    <style>
+        /* Additional style for aspect ratio if Tailwind's aspect-square isn't sufficient or for fallback */
+        .aspect-square {
+            aspect-ratio: 1 / 1;
+        }
+    </style>
 </head>
 
-<body class="flex flex-col items-center min-h-screen p-4">
+<body class="flex flex-col items-center min-h-screen p-4 bg-gray-100 dark:bg-gray-900">
 
     <div id="message-box" class="message-box"></div>
 
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-2xl mb-8">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-2xl">
         <header class="mb-6 text-center relative">
-            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Advanced Coffee Tracker</h1>
+            <h1 id="main-title" class="text-3xl font-bold text-gray-800 dark:text-gray-100">Advanced Coffee Tracker</h1>
             <a href="{{ url_for('logout') }}"
                 class="absolute top-0 right-0 text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium p-1">
                 Logout ({{ username or 'User' }})
             </a>
         </header>
 
-        <div class="mb-6">
-            <label for="log-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Date
-                for Log:</label>
-            <div class="flex items-center space-x-2">
-                <button id="prev-day-btn" title="Previous Day"
-                    class="p-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg shadow-sm transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                        stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                    </svg>
+        <div class="flex justify-end items-center mb-6">
+            <span id="view-mode-label" class="text-sm font-medium text-gray-900 dark:text-gray-300 mr-3">Switch to
+                Simple View</span>
+            <label for="view-mode-toggle" class="inline-flex relative items-center cursor-pointer">
+                <input type="checkbox" id="view-mode-toggle" class="sr-only peer">
+                <div
+                    class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600">
+                </div>
+            </label>
+        </div>
+
+        <div id="advanced-view-wrapper">
+            <div id="daily-log-advanced-section" class="mb-8">
+                <div class="mb-6"> <label for="log-date"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Date for
+                        Log:</label>
+                    <div class="flex items-center space-x-2">
+                        <button id="prev-day-btn" title="Previous Day"
+                            class="p-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg shadow-sm transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                            </svg>
+                        </button>
+                        <input type="date" id="log-date"
+                            class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 dark:hover:bg-gray-600">
+                        <button id="next-day-btn" title="Next Day"
+                            class="p-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg shadow-sm transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
+                        </button>
+                        <div class="date-quick-select flex shadow-sm rounded-md ml-2">
+                            <button id="yesterday-btn"
+                                class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-l-md transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200">Yesterday</button>
+                            <button id="today-btn"
+                                class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-r-md border-l border-gray-300 transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200 dark:border-gray-500">Today</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group flex mb-6 shadow-sm rounded-lg">
+                    <select id="coffee-type-select"
+                        class="flex-grow p-3 border text-gray-900 border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:ring-indigo-400 dark:focus:border-indigo-400">
+                        <option value="">Loading coffee types...</option>
+                    </select>
+                    <button id="add-coffee-btn"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold p-3 rounded-r-lg transition-colors duration-150 ease-in-out focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:focus:ring-indigo-400"
+                        {% if username=='guest' %}disabled{% endif %}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor" class="w-5 h-5 inline-block mr-1 align-middle">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Add
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-3">Log for <span
+                                id="selected-date-display-log"></span>:</h2>
+                        <ul id="coffee-list"
+                            class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar bg-gray-50 dark:bg-gray-700/60 p-3 rounded-md border border-gray-200 dark:border-gray-600">
+                        </ul>
+                        <p id="no-coffee-msg" class="text-center text-gray-500 dark:text-gray-400 py-3 italic"
+                            style="display: none;">No coffees logged.</p>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-3">Costs for <span
+                                id="selected-date-display-cost"></span>:</h2>
+                        <div class="bg-indigo-50 dark:bg-indigo-900/50 p-3 rounded-lg shadow-sm mb-3">
+                            <p class="text-lg font-semibold text-indigo-700 dark:text-indigo-300">Total Coffees: <span
+                                    id="coffee-count" class="text-xl">0</span></p>
+                            <p class="text-lg font-semibold text-indigo-700 dark:text-indigo-300">Total Cost: <span
+                                    id="total-daily-cost" class="text-xl">€0.00</span></p>
+                        </div>
+                        <h3 class="text-md font-semibold text-gray-600 dark:text-gray-300 mb-2">Cost Breakdown by Type:
+                        </h3>
+                        <ul id="daily-cost-breakdown-list"
+                            class="space-y-1 max-h-40 overflow-y-auto pr-2 custom-scrollbar bg-gray-50 dark:bg-gray-700/60 p-3 rounded-md border border-gray-200 dark:border-gray-600">
+                        </ul>
+                        <p id="no-cost-breakdown-msg" class="text-center text-gray-500 dark:text-gray-400 py-3 italic"
+                            style="display: none;">No costs to display.</p>
+                    </div>
+                </div>
+                <button id="clear-day-btn"
+                    class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out focus:ring-2 focus:ring-red-400 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-500"
+                    {% if username=='guest' %}disabled{% endif %}>
+                    Clear Log for <span id="selected-date-display-clear"></span>
                 </button>
+            </div>
 
-                <input type="date" id="log-date"
-                    class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 dark:hover:bg-gray-600">
-
-                <button id="next-day-btn" title="Next Day"
-                    class="p-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg shadow-sm transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                        stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
+            <div id="monthly-reports-advanced-section"
+                class="pt-6 mt-8 border-t border-gray-200 dark:border-gray-700 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Monthly Reports</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 report-input items-end">
+                    <div>
+                        <label for="report-year-monthly"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year:</label>
+                        <input type="number" id="report-year-monthly" placeholder="YYYY"
+                            class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label for="report-month"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Month:</label>
+                        <select id="report-month"
+                            class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"></select>
+                    </div>
+                    <div>
+                        <label for="report-coffee-type-monthly"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Coffee Type:</label>
+                        <select id="report-coffee-type-monthly"
+                            class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
+                            <option value="All">All Types</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="generate-monthly-report-btn"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out mb-6 focus:ring-2 focus:ring-green-500 focus:ring-offset-1 dark:bg-green-500 dark:hover:bg-green-600 dark:focus:ring-green-400">
+                    Generate Monthly Report
                 </button>
+                <div id="monthly-report-results-area"
+                    class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600"
+                    style="display: none;">
+                    <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Monthly Report Results:</h3>
+                    <p class="text-gray-700 dark:text-gray-300"><strong>Period:</strong> <span
+                            id="monthly-report-period"></span></p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong>Type Filter:</strong> <span
+                            id="monthly-report-type-filter"></span></p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong>Overall Total Coffees:</strong> <span
+                            id="monthly-report-total-coffees"></span></p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong>Overall Total Cost:</strong> <span
+                            id="monthly-report-total-cost" class="font-bold"></span></p>
+                    <div id="monthly-report-breakdown-container" class="mt-4" style="display: none;">
+                        <h4 class="text-lg font-semibold text-gray-600 dark:text-gray-300 mb-2">Breakdown by Type:</h4>
+                        <ul id="monthly-report-breakdown-list"
+                            class="space-y-1 max-h-48 overflow-y-auto pr-2 custom-scrollbar bg-gray-100 dark:bg-gray-700 p-3 rounded-md border border-gray-200 dark:border-gray-600">
+                        </ul>
+                    </div>
+                </div>
+                <p id="no-monthly-report-data-msg" class="text-center text-gray-500 dark:text-gray-400 py-3 italic"
+                    style="display: none;">No data for the selected period/filter.</p>
+            </div>
 
-                <div class="date-quick-select flex shadow-sm rounded-md ml-2">
-                    <button id="yesterday-btn"
-                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-l-md transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200">Yesterday</button>
-                    <button id="today-btn"
-                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-r-md border-l border-gray-300 transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200 dark:border-gray-500">Today</button>
+            <div id="yearly-reports-advanced-section"
+                class="pt-6 mt-8 border-t border-gray-200 dark:border-gray-700 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Yearly Reports</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 report-input items-end">
+                    <div>
+                        <label for="report-year-yearly"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year:</label>
+                        <input type="number" id="report-year-yearly" placeholder="YYYY"
+                            class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label for="report-coffee-type-yearly"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Coffee Type:</label>
+                        <select id="report-coffee-type-yearly"
+                            class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
+                            <option value="All">All Types</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="generate-yearly-report-btn"
+                    class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out mb-6 focus:ring-2 focus:ring-sky-500 focus:ring-offset-1 dark:bg-sky-500 dark:hover:bg-sky-600 dark:focus:ring-sky-400">
+                    Generate Yearly Report
+                </button>
+                <div id="yearly-report-results-area"
+                    class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600"
+                    style="display: none;">
+                    <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Yearly Report Results:</h3>
+                    <p class="text-gray-700 dark:text-gray-300"><strong>Period:</strong> Year <span
+                            id="yearly-report-period"></span></p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong>Type Filter:</strong> <span
+                            id="yearly-report-type-filter"></span></p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong>Overall Total Coffees:</strong> <span
+                            id="yearly-report-total-coffees"></span></p>
+                    <p class="text-gray-700 dark:text-gray-300"><strong>Overall Total Cost:</strong> <span
+                            id="yearly-report-total-cost" class="font-bold"></span></p>
+                    <div id="yearly-report-breakdown-container" class="mt-4" style="display: none;">
+                        <h4 class="text-lg font-semibold text-gray-600 dark:text-gray-300 mb-2">Breakdown by Type:</h4>
+                        <ul id="yearly-report-breakdown-list"
+                            class="space-y-1 max-h-48 overflow-y-auto pr-2 custom-scrollbar bg-gray-100 dark:bg-gray-700 p-3 rounded-md border border-gray-200 dark:border-gray-600">
+                        </ul>
+                    </div>
+                </div>
+                <p id="no-yearly-report-data-msg" class="text-center text-gray-500 dark:text-gray-400 py-3 italic"
+                    style="display: none;">No data for the selected year/filter.</p>
+            </div>
+
+            <div id="fun-fact-advanced-section" class="pt-6 mt-8 border-t border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Coffee Fun Fact!</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 fun-fact-input items-end">
+                    <div>
+                        <label for="fun-fact-year"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Year:</label>
+                        <input type="number" id="fun-fact-year" placeholder="YYYY"
+                            class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
+                    </div>
+                    <button id="show-fun-fact-btn"
+                        class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out focus:ring-2 focus:ring-purple-500 focus:ring-offset-1 dark:bg-purple-500 dark:hover:bg-purple-600 dark:focus:ring-purple-400">
+                        Show Volume Fact
+                    </button>
+                </div>
+                <div id="fun-fact-display-area"
+                    class="bg-purple-50 dark:bg-purple-800/30 p-4 rounded-lg border border-purple-200 dark:border-purple-700 text-center"
+                    style="display: none;">
+                    <p class="text-lg text-purple-700 dark:text-purple-300">In <span id="fun-fact-year-display"
+                            class="font-semibold"></span>, you consumed approximately <span id="fun-fact-volume"
+                            class="font-bold text-xl">0</span> ml of coffee!</p>
+                </div>
+                <p id="no-fun-fact-data-msg" class="text-center text-gray-500 dark:text-gray-400 py-3 italic"
+                    style="display: none;">Select a year to see the fun fact.</p>
+            </div>
+        </div>
+        <div id="simple-view-wrapper" style="display: none;">
+            <div class="mb-6">
+                <label for="log-date-simple"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Date:</label>
+                <div class="flex items-center space-x-2">
+                    <button id="prev-day-btn-simple" title="Previous Day"
+                        class="p-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg shadow-sm transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                        </svg>
+                    </button>
+                    <input type="date" id="log-date-simple"
+                        class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 dark:hover:bg-gray-600">
+                    <button id="next-day-btn-simple" title="Next Day"
+                        class="p-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg shadow-sm transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </button>
+                    <div class="date-quick-select flex shadow-sm rounded-md ml-2">
+                        <button id="yesterday-btn-simple"
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-3 rounded-l-md transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200">Yesterday</button>
+                        <button id="today-btn-simple"
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-3 rounded-r-md border-l border-gray-300 transition-colors text-sm dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200 dark:border-gray-500">Today</button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="input-group flex mb-6 shadow-sm rounded-lg">
-            <select id="coffee-type-select"
-                class="flex-grow p-3 border text-gray-900 border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:ring-indigo-400 dark:focus:border-indigo-400">
-                <option value="">Loading coffee types...</option>
-            </select>
-            <button id="add-coffee-btn"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold p-3 rounded-r-lg transition-colors duration-150 ease-in-out focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:focus:ring-indigo-400"
-                {% if username=='guest' %}disabled{% endif %}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                    stroke="currentColor" class="w-5 h-5 inline-block mr-1 align-middle">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                Add
-            </button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-                <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-3">Log for <span
-                        id="selected-date-display-log"></span>:</h2>
-                <ul id="coffee-list"
-                    class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar bg-gray-50 dark:bg-gray-700/60 p-3 rounded-md border border-gray-200 dark:border-gray-600">
-                </ul>
-                <p id="no-coffee-msg" class="text-center text-gray-500 dark:text-gray-400 py-3 italic"
-                    style="display: none;">No coffees logged.</p>
+            <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-3">Quick Add Coffee:</h2>
+            <div id="simple-coffee-buttons-container" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
             </div>
-            <div>
-                <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-3">Costs for <span
-                        id="selected-date-display-cost"></span>:</h2>
-                <div class="bg-indigo-50 dark:bg-indigo-900/50 p-3 rounded-lg shadow-sm mb-3">
-                    <p class="text-lg font-semibold text-indigo-700 dark:text-indigo-300">Total Coffees: <span
-                            id="coffee-count" class="text-xl">0</span></p>
-                    <p class="text-lg font-semibold text-indigo-700 dark:text-indigo-300">Total Cost: <span
-                            id="total-daily-cost" class="text-xl">€0.00</span></p>
-                </div>
-                <h3 class="text-md font-semibold text-gray-600 dark:text-gray-300 mb-2">Cost Breakdown by Type:</h3>
-                <ul id="daily-cost-breakdown-list"
-                    class="space-y-1 max-h-40 overflow-y-auto pr-2 custom-scrollbar bg-gray-50 dark:bg-gray-700/60 p-3 rounded-md border border-gray-200 dark:border-gray-600">
-                </ul>
-                <p id="no-cost-breakdown-msg" class="text-center text-gray-500 dark:text-gray-400 py-3 italic"
-                    style="display: none;">No costs to display.</p>
+
+            <div class="bg-indigo-50 dark:bg-indigo-900/50 p-4 rounded-lg shadow-sm text-center">
+                <p class="text-lg font-semibold text-indigo-700 dark:text-indigo-300">
+                    Coffees on <span id="simple-selected-date-display" class="font-normal">date</span>:
+                    <span id="simple-coffee-count" class="text-2xl font-bold">0</span>
+                </p>
             </div>
         </div>
-        <button id="clear-day-btn"
-            class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out focus:ring-2 focus:ring-red-400 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-500"
-            {% if username=='guest' %}disabled{% endif %}>
-            Clear Log for <span id="selected-date-display-clear"></span>
-        </button>
     </div>
-
-    <div class="dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-2xl mb-8">
-        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Monthly Reports</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 report-input items-end">
-            <div>
-                <label for="report-year-monthly"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year:</label>
-                <input type="number" id="report-year-monthly" placeholder="YYYY"
-                    class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
-            </div>
-            <div>
-                <label for="report-month"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Month:</label>
-                <select id="report-month"
-                    class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"></select>
-            </div>
-            <div>
-                <label for="report-coffee-type-monthly"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Coffee Type:</label>
-                <select id="report-coffee-type-monthly"
-                    class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
-                    <option value="All">All Types</option>
-                </select>
-            </div>
-        </div>
-        <button id="generate-monthly-report-btn"
-            class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out mb-6 focus:ring-2 focus:ring-green-500 focus:ring-offset-1 dark:bg-green-500 dark:hover:bg-green-600 dark:focus:ring-green-400">
-            Generate Monthly Report
-        </button>
-        <div id="monthly-report-results-area"
-            class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600"
-            style="display: none;">
-            <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Monthly Report Results:</h3>
-            <p class="text-gray-700 dark:text-gray-300"><strong>Period:</strong> <span
-                    id="monthly-report-period"></span></p>
-            <p class="text-gray-700 dark:text-gray-300"><strong>Type Filter:</strong> <span
-                    id="monthly-report-type-filter"></span></p>
-            <p class="text-gray-700 dark:text-gray-300"><strong>Overall Total Coffees:</strong> <span
-                    id="monthly-report-total-coffees"></span></p>
-            <p class="text-gray-700 dark:text-gray-300"><strong>Overall Total Cost:</strong> <span
-                    id="monthly-report-total-cost" class="font-bold"></span></p>
-            <div id="monthly-report-breakdown-container" class="mt-4" style="display: none;">
-                <h4 class="text-lg font-semibold text-gray-600 dark:text-gray-300 mb-2">Breakdown by Type:</h4>
-                <ul id="monthly-report-breakdown-list"
-                    class="space-y-1 max-h-48 overflow-y-auto pr-2 custom-scrollbar bg-gray-100 dark:bg-gray-700 p-3 rounded-md border border-gray-200 dark:border-gray-600">
-                </ul>
-            </div>
-        </div>
-        <p id="no-monthly-report-data-msg" class="text-center text-gray-500 dark:text-gray-400 py-3 italic"
-            style="display: none;">No data for the selected period/filter.</p>
-    </div>
-
-    <div class="dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-2xl mb-8">
-        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Yearly Reports</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 report-input items-end">
-            <div>
-                <label for="report-year-yearly"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year:</label>
-                <input type="number" id="report-year-yearly" placeholder="YYYY"
-                    class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
-            </div>
-            <div>
-                <label for="report-coffee-type-yearly"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Coffee Type:</label>
-                <select id="report-coffee-type-yearly"
-                    class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
-                    <option value="All">All Types</option>
-                </select>
-            </div>
-        </div>
-        <button id="generate-yearly-report-btn"
-            class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out mb-6 focus:ring-2 focus:ring-sky-500 focus:ring-offset-1 dark:bg-sky-500 dark:hover:bg-sky-600 dark:focus:ring-sky-400">
-            Generate Yearly Report
-        </button>
-        <div id="yearly-report-results-area"
-            class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600"
-            style="display: none;">
-            <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Yearly Report Results:</h3>
-            <p class="text-gray-700 dark:text-gray-300"><strong>Period:</strong> Year <span
-                    id="yearly-report-period"></span></p>
-            <p class="text-gray-700 dark:text-gray-300"><strong>Type Filter:</strong> <span
-                    id="yearly-report-type-filter"></span></p>
-            <p class="text-gray-700 dark:text-gray-300"><strong>Overall Total Coffees:</strong> <span
-                    id="yearly-report-total-coffees"></span></p>
-            <p class="text-gray-700 dark:text-gray-300"><strong>Overall Total Cost:</strong> <span
-                    id="yearly-report-total-cost" class="font-bold"></span></p>
-            <div id="yearly-report-breakdown-container" class="mt-4" style="display: none;">
-                <h4 class="text-lg font-semibold text-gray-600 dark:text-gray-300 mb-2">Breakdown by Type:</h4>
-                <ul id="yearly-report-breakdown-list"
-                    class="space-y-1 max-h-48 overflow-y-auto pr-2 custom-scrollbar bg-gray-100 dark:bg-gray-700 p-3 rounded-md border border-gray-200 dark:border-gray-600">
-                </ul>
-            </div>
-        </div>
-        <p id="no-yearly-report-data-msg" class="text-center text-gray-500 dark:text-gray-400 py-3 italic"
-            style="display: none;">No data for the selected year/filter.</p>
-    </div>
-
-    <div class="section-divider dark:border-gray-600"></div>
-
-    <div class="dark:bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-2xl">
-        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Coffee Fun Fact!</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 fun-fact-input items-end">
-            <div>
-                <label for="fun-fact-year"
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Year:</label>
-                <input type="number" id="fun-fact-year" placeholder="YYYY"
-                    class="w-full p-3 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
-            </div>
-            <button id="show-fun-fact-btn"
-                class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold p-3 rounded-lg transition-colors duration-150 ease-in-out focus:ring-2 focus:ring-purple-500 focus:ring-offset-1 dark:bg-purple-500 dark:hover:bg-purple-600 dark:focus:ring-purple-400">
-                Show Volume Fact
-            </button>
-        </div>
-        <div id="fun-fact-display-area"
-            class="bg-purple-50 dark:bg-purple-800/30 p-4 rounded-lg border border-purple-200 dark:border-purple-700 text-center"
-            style="display: none;">
-            <p class="text-lg text-purple-700 dark:text-purple-300">In <span id="fun-fact-year-display"
-                    class="font-semibold"></span>, you consumed approximately <span id="fun-fact-volume"
-                    class="font-bold text-xl">0</span> ml of coffee!</p>
-        </div>
-        <p id="no-fun-fact-data-msg" class="text-center text-gray-500 dark:text-gray-400 py-3 italic"
-            style="display: none;">Select a year to see the fun fact.</p>
-    </div>
-
     <script src="{{ url_for('static', filename='js/coffee_tracker.js') }}"></script>
 </body>
 
