@@ -386,7 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
           "p-2 border text-gray-900 border-gray-300 rounded-lg shadow-sm dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500 focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-32"; // Fixed width for input
         input.step = "0.01";
         input.min = "0";
-        input.placeholder = `Default: ${defaultPrice.toFixed(2)}`;
+        input.placeholder = `${defaultPrice.toFixed(2)}`;
         input.value = customPrice !== undefined ? customPrice.toFixed(2) : "";
         input.dataset.coffeeName = coffeeName;
 
